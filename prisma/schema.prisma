@@ -1,0 +1,83 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Material {
+  id                 Int      @id @default(autoincrement())
+  descripcion        String
+  unidad_medida      String   // "Kilo", "Barra", "Unidad"
+  precio_base        Float    // El precio ingresado por el usuario
+  tiene_iva_incluido Boolean  @default(true)
+  precio_final       Float    // Calculado automáticamente si no tiene IVA
+  fecha_actualizacion DateTime @updatedAt
+
+  items_ordenes ItemOrdenTrabajo[]
+}
+
+model Cliente {
+  id           Int      @id @default(autoincrement())
+  nombre       String
+  contacto     String?
+  direccion    String?
+  
+  ordenes      OrdenTrabajo[]
+  transacciones Transaccion[]
+}
+
+model Proveedor {
+  id           Int      @id @default(autoincrement())
+  nombre       String
+  contacto     String?
+  
+  transacciones Transaccion[]
+}
+
+model OrdenTrabajo {
+  id               Int      @id @default(autoincrement())
+  clienteId        Int
+  fecha            DateTime @default(now())
+  estado           String   @default("Pendiente") // Pendiente, En Curso, Terminado
+  total_materiales Float    @default(0)
+  total_mano_obra  Float    @default(0)
+  monto_total      Float    @default(0)
+  
+  cliente          Cliente  @relation(fields: [clienteId], references: [id])
+  items            ItemOrdenTrabajo[]
+  pagos            Transaccion[]
+}
+
+model ItemOrdenTrabajo {
+  id             Int          @id @default(autoincrement())
+  ordenTrabajoId Int
+  materialId     Int
+  cantidad       Float
+  precio_unitario Float       // Captura el precio del material en el momento de crear la orden
+  
+  orden          OrdenTrabajo @relation(fields: [ordenTrabajoId], references: [id])
+  material       Material     @relation(fields: [materialId], references: [id])
+}
+
+model Transaccion {
+  id             Int      @id @default(autoincrement())
+  fecha          DateTime @default(now())
+  tipo           String   // "Ingreso" o "Egreso"
+  monto          Float
+  categoria      String   // "Retiro Dueño", "Pago Cliente", "Compra Insumos", "Viaticos", etc.
+  descripcion    String?
+  
+  // Relaciones opcionales para Cuentas Corrientes
+  clienteId      Int?
+  proveedorId    Int?
+  ordenTrabajoId Int?
+
+  cliente        Cliente?      @relation(fields: [clienteId], references: [id])
+  proveedor      Proveedor?    @relation(fields: [proveedorId], references: [id])
+  ordenTrabajo   OrdenTrabajo? @relation(fields: [ordenTrabajoId], references: [id])
+}

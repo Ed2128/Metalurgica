@@ -1,0 +1,33 @@
+{
+  "name": "taller-metalurgico",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Aplicación web diseñada para centralizar, automatizar y gestionar las finanzas y presupuestos de un taller metalúrgico. El sistema reemplaza el uso de múltiples planillas de Excel aisladas, permitiendo la generación de presupuestos precisos, el control de la caja diaria, el seguimiento de cuentas corrientes de clientes/proveedores y la separación nítida entre los ingresos del negocio y los retiros personales del dueño.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ed2128/Metalurgica.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Ed2128/Metalurgica/issues"
+  },
+  "homepage": "https://github.com/Ed2128/Metalurgica#readme",
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "prisma": "^7.8.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.8.0"
+  }
+}
