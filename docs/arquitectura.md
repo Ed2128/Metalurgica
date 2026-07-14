@@ -24,6 +24,12 @@ Tabla central inmutable para registrar movimientos de dinero.
 * Campos clave: `id`, `fecha`, `tipo` (Ingreso, Egreso), `monto`, `categoria`, `descripcion`, `clienteId` (opcional), `proveedorId` (opcional), `ordenTrabajoId` (opcional).
 * Lógica: Si una transacción tiene un `clienteId`, afecta el saldo de su cuenta corriente. Si la categoría es "Retiro Dueño", se filtra para el reporte personal.
 
+## Conexión a Base de Datos (Prisma Adapter)
+Debido a los estándares recientes de Prisma, la conexión a PostgreSQL no se realiza directamente desde el archivo `schema.prisma`. 
+* Se utiliza el driver nativo `pg` junto con `@prisma/adapter-pg`.
+* La instancia del cliente de base de datos se exporta como un singleton desde `src/prisma.ts` para evitar la saturación del pool de conexiones en el entorno de desarrollo.
+* La URL de conexión se gestiona estrictamente a través de variables de entorno en el archivo `.env` y se mapea mediante `prisma.config.ts`.
+
 ## Consideraciones de la API (Endpoints Planificados)
 * `GET /api/caja/saldo` -> Calcula el saldo actual sumando ingresos y restando egresos.
 * `GET /api/clientes/deudas` -> Devuelve un arreglo con los clientes cuyo saldo deudor sea mayor a 0 (El reporte más solicitado).
