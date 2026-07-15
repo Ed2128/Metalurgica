@@ -8,7 +8,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "dev": "tsx watch src/index.ts"
+    "dev": "tsx watch src/index.ts" //El comando watch hará que el servidor se reinicie automáticamente cada vez que guardes un cambio en el código, agilizando muchísimo el desarrollo.
   },
   "repository": {
     "type": "git",

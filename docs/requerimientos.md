@@ -14,10 +14,10 @@ Los materiales se miden y almacenan en tres unidades posibles:
 ### Lógica Impositiva (IVA y Tasas)
 El sistema debe soportar un modelo de ingreso dual para los precios de los materiales:
 * **Con IVA Incluido:** El valor ingresado es el final.
-* **Sin IVA:** El sistema debe calcular el precio final aplicando los siguientes recargos parametrizables:
-  * IVA: 21%
-  * Ingresos Brutos (IIBB): 3.31%
-  * Tasa Municipal: 0.80%
+* **Sin IVA:** El sistema debe calcular el precio final aplicando recargos dinámicos que el usuario puede modificar en la interfaz. Por defecto, los valores son:
+  * IVA: 21% (0.21)
+  * Ingresos Brutos (IIBB): 3.31% (0.0331)
+  * Tasa Municipal: 0.80% (0.008)
 
 ### Cálculo de Mano de Obra
 La mano de obra no se ingresa manualmente. El sistema la calcula aplicando un coeficiente fijo sobre el costo total de los materiales del trabajo.
