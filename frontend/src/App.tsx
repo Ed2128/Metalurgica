@@ -3,6 +3,7 @@ import { Home, Package, FileText, DollarSign, Users } from 'lucide-react';
 import Materiales from './Materiales'; // <-- Importación de Materiales
 import Clientes from './Clientes';     // <-- Importación de Clientes
 import Presupuestos from './Presupuestos';
+import Caja from './Caja';
 // Componente del Menú Lateral
 function Sidebar() {
   const location = useLocation();
@@ -66,7 +67,7 @@ export default function App() {
             <Route path="/materiales" element={<Materiales />} />
             <Route path="/clientes" element={<Clientes />} />
             <Route path="/presupuestos" element={<Presupuestos />} />
-            <Route path="/caja" element={<h1 className="text-2xl font-bold">Módulo de Caja (Próximamente)</h1>} />
+            <Route path="/caja" element={<Caja />} />
           </Routes>
         </div>
       </div>
