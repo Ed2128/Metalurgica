@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Home, Package, FileText, DollarSign, Users } from 'lucide-react';
-import Materiales from './Materiales'; // <-- Aquí importamos tu nueva pantalla
+
+import Materiales from './Materiales'; // <-- Importación de Materiales
+import Clientes from './Clientes';     // <-- Importación de Clientes
 
 // Componente del Menú Lateral
 function Sidebar() {
@@ -60,12 +62,13 @@ export default function App() {
         <div className="flex-1 p-8">
           <Routes>
             <Route path="/" element={<Inicio />} />
-            {/* 👇 Aquí es donde conectamos la ruta con tu nuevo componente 👇 */}
+            
+            {/* 👇 Rutas conectadas a los archivos reales 👇 */}
             <Route path="/materiales" element={<Materiales />} />
+            <Route path="/clientes" element={<Clientes />} />
             
             <Route path="/presupuestos" element={<h1 className="text-2xl font-bold">Módulo de Presupuestos (Próximamente)</h1>} />
             <Route path="/caja" element={<h1 className="text-2xl font-bold">Módulo de Caja (Próximamente)</h1>} />
-            <Route path="/clientes" element={<h1 className="text-2xl font-bold">Módulo de Clientes (Próximamente)</h1>} />
           </Routes>
         </div>
       </div>

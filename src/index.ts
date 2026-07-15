@@ -91,6 +91,19 @@ app.listen(PORT, () => {
   console.log(`🚀 Servidor backend corriendo en http://localhost:${PORT}`);
 });
 
+// Obtener todos los clientes
+app.get('/api/clientes', async (req, res) => {
+  try {
+    const clientes = await prisma.cliente.findMany({
+      orderBy: { id: 'desc' } // Los ordenamos para que los más nuevos salgan arriba
+    });
+    res.json(clientes);
+  } catch (error) {
+    console.error("Error al obtener clientes:", error);
+    res.status(500).json({ error: 'Hubo un problema al consultar los clientes' });
+  }
+});
+
 // --- RUTAS DE ÓRDENES DE TRABAJO ---
 
 // 4. Crear un nuevo Presupuesto / Orden de Trabajo
