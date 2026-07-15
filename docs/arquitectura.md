@@ -34,3 +34,9 @@ Debido a los estándares recientes de Prisma, la conexión a PostgreSQL no se re
 * `GET /api/caja/saldo` -> Calcula el saldo actual sumando ingresos y restando egresos.
 * `GET /api/clientes/deudas` -> Devuelve un arreglo con los clientes cuyo saldo deudor sea mayor a 0 (El reporte más solicitado).
 * `POST /api/ordenes` -> Recibe un array de materiales, calcula el coeficiente 2.5 y genera la orden.
+
+## Estructura del Backend
+El servidor está construido con **Express.js** sobre Node.js, utilizando módulos ESM.
+* **Punto de entrada:** `src/index.ts`
+* **Ejecución en desarrollo:** Se utiliza `tsx watch` para recarga en caliente y compilación de TypeScript al vuelo.
+* **CORS:** Habilitado globalmente para permitir futuras peticiones desde el frontend en React.
