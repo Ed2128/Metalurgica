@@ -118,7 +118,7 @@ app.post('/api/ordenes', async (req, res) => {
     let total_materiales = 0;
     
     const itemsParaGuardar = items.map((item: any) => {
-      const material = materialesDB.find(m => m.id === item.materialId);
+      const material = materialesDB.find((m: any) => m.id === item.materialId);
       
       if (!material) {
         throw new Error(`El material con ID ${item.materialId} no existe en el catálogo.`);
@@ -222,7 +222,7 @@ app.get('/api/transacciones', async (req, res) => {
 
     // Calculamos el saldo iterando sobre el historial
     let saldo_actual = 0;
-    transacciones.forEach(t => {
+    transacciones.forEach((t: any) => {
       if (t.tipo === 'Ingreso') saldo_actual += t.monto;
       if (t.tipo === 'Egreso') saldo_actual -= t.monto;
     });
@@ -235,5 +235,46 @@ app.get('/api/transacciones', async (req, res) => {
   } catch (error) {
     console.error("Error al obtener la caja:", error);
     res.status(500).json({ error: 'Hubo un problema al consultar el historial de caja' });
+  }
+});
+
+// --- RUTAS DE REPORTES ---
+
+// 7. Reporte de Deudores (Clientes con saldo pendiente)
+app.get('/api/reportes/deudores', async (req, res) => {
+  try {
+    // Buscamos todos los clientes e incluimos sus trabajos y sus pagos
+    const clientes = await prisma.cliente.findMany({
+      include: {
+        ordenes: true,
+        transacciones: {
+          where: { tipo: 'Ingreso' } // Solo nos importan los pagos/señas que hicieron
+        }
+      }
+    });
+
+   // Procesamos la matemática para cada cliente
+    const reporteDeudores = clientes.map((cliente: any) => {
+      // Le decimos a TypeScript que 'sum' empieza como número y 'orden'/'pago' pueden ser cualquier cosa
+      const total_trabajos = cliente.ordenes.reduce((sum: number, orden: any) => sum + orden.monto_total, 0);
+      const total_pagos = cliente.transacciones.reduce((sum: number, pago: any) => sum + pago.monto, 0);
+      
+      const saldo_pendiente = total_trabajos - total_pagos;
+
+      return {
+        clienteId: cliente.id,
+        nombre: cliente.nombre,
+        contacto: cliente.contacto,
+        total_trabajos,
+        total_pagos,
+        saldo_pendiente
+      };
+    })
+    // 4. Filtramos para devolver SOLO a los que nos deben plata
+    .filter((cliente: any) => cliente.saldo_pendiente > 0);
+    res.json(reporteDeudores);
+  } catch (error) {
+    console.error("Error al generar reporte de deudores:", error);
+    res.status(500).json({ error: 'Hubo un problema al calcular las deudas' });
   }
 });
