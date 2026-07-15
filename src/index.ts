@@ -163,3 +163,77 @@ app.post('/api/ordenes', async (req, res) => {
     res.status(500).json({ error: error.message || 'Hubo un problema al generar el presupuesto' });
   }
 });
+
+// --- RUTAS DE TRANSACCIONES (CAJA Y COBROS) ---
+
+// 5. Registrar un nuevo movimiento de caja (Ingreso o Egreso)
+app.post('/api/transacciones', async (req, res) => {
+  try {
+    const { 
+      tipo,         // Obligatorio: "Ingreso" o "Egreso"
+      monto,        // Obligatorio: Número positivo
+      categoria,    // Obligatorio: "Retiro Dueño", "Pago Cliente", "Compra Insumos", etc.
+      descripcion,  // Opcional
+      clienteId,    // Opcional (Si es un cobro a un cliente)
+      proveedorId,  // Opcional (Si es un pago a un proveedor)
+      ordenTrabajoId// Opcional (Si el pago corresponde a un presupuesto específico)
+    } = req.body;
+
+    // Validación de seguridad básica
+    if (!tipo || !monto || !categoria) {
+      return res.status(400).json({ error: "Faltan campos obligatorios: tipo, monto o categoria." });
+    }
+
+    if (tipo !== "Ingreso" && tipo !== "Egreso") {
+      return res.status(400).json({ error: "El tipo debe ser estrictamente 'Ingreso' o 'Egreso'." });
+    }
+
+    // Registramos el movimiento en la base de datos
+    const nuevaTransaccion = await prisma.transaccion.create({
+      data: {
+        tipo,
+        monto,
+        categoria,
+        descripcion,
+        clienteId,
+        proveedorId,
+        ordenTrabajoId
+      }
+    });
+
+    res.status(201).json(nuevaTransaccion);
+  } catch (error) {
+    console.error("Error al registrar transacción:", error);
+    res.status(500).json({ error: 'Hubo un problema al guardar el movimiento de caja' });
+  }
+});
+
+// 6. Obtener el historial de la Caja Diaria y el Saldo Actual
+app.get('/api/transacciones', async (req, res) => {
+  try {
+    // Buscamos todas las transacciones, ordenadas de la más nueva a la más vieja
+    const transacciones = await prisma.transaccion.findMany({
+      orderBy: { fecha: 'desc' },
+      include: {
+        cliente: { select: { nombre: true } }, // Traemos el nombre del cliente si existe
+        proveedor: { select: { nombre: true } } // Traemos el nombre del proveedor si existe
+      }
+    });
+
+    // Calculamos el saldo iterando sobre el historial
+    let saldo_actual = 0;
+    transacciones.forEach(t => {
+      if (t.tipo === 'Ingreso') saldo_actual += t.monto;
+      if (t.tipo === 'Egreso') saldo_actual -= t.monto;
+    });
+
+    // Devolvemos un objeto estructurado con el saldo ya procesado y la lista de movimientos
+    res.json({
+      saldo_actual,
+      historial: transacciones
+    });
+  } catch (error) {
+    console.error("Error al obtener la caja:", error);
+    res.status(500).json({ error: 'Hubo un problema al consultar el historial de caja' });
+  }
+});
