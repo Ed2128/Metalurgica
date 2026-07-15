@@ -52,3 +52,6 @@ El servidor está construido con **Express.js** sobre Node.js, utilizando módul
 * **Enrutamiento:** React Router DOM (estructura de Sidebar + Área de Contenido).
 * **Módulos Activos:**
   * `Materiales`: Formulario y tabla de catálogo. Inyecta lógica de cálculo de tasas (25.11%) desde la UI hacia el backend.
+  * `Presupuestos`: Combina Clientes y Materiales. Calcula mano de obra y genera registros anidados en la base de datos.
+  * `Caja`: Muestra el historial de transacciones (`Ingreso`/`Egreso`) y procesa el saldo actual en un panel destacado.
+  * `Inicio (Dashboard)`: Pantalla principal que consume el reporte de deudores cruzando órdenes de trabajo contra señas pagadas.
