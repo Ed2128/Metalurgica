@@ -42,3 +42,6 @@ El servidor está construido con **Express.js** sobre Node.js, utilizando módul
 * **Punto de entrada:** `src/index.ts`
 * **Ejecución en desarrollo:** Se utiliza `tsx watch` para recarga en caliente y compilación de TypeScript al vuelo.
 * **CORS:** Habilitado globalmente para permitir futuras peticiones desde el frontend en React.
+
+## Reportes
+* `GET /api/reportes/deudores` -> Calcula el saldo pendiente de cada cliente cruzando el `monto_total` de sus `OrdenTrabajo` contra sus `Transaccion` de tipo "Ingreso". Filtra y devuelve solo los saldos mayores a 0.
