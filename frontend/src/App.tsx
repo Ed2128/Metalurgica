@@ -1,18 +1,74 @@
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { Home, Package, FileText, DollarSign, Users } from 'lucide-react';
+import Materiales from './Materiales'; // <-- Aquí importamos tu nueva pantalla
+
+// Componente del Menú Lateral
+function Sidebar() {
+  const location = useLocation();
+  const isActive = (path: string) => location.pathname === path ? 'bg-gray-800 border-l-4 border-blue-500' : 'hover:bg-gray-800';
+
+  return (
+    <div className="w-64 bg-gray-900 text-white min-h-screen flex flex-col">
+      <div className="p-6 text-2xl font-bold border-b border-gray-800 flex items-center gap-3">
+        <span className="text-blue-500">⚙️</span>
+        Taller App
+      </div>
+      
+      <nav className="flex-1 py-4">
+        <Link to="/" className={`flex items-center gap-3 px-6 py-3 transition-colors ${isActive('/')}`}>
+          <Home size={20} />
+          <span>Inicio</span>
+        </Link>
+        <Link to="/materiales" className={`flex items-center gap-3 px-6 py-3 transition-colors ${isActive('/materiales')}`}>
+          <Package size={20} />
+          <span>Materiales</span>
+        </Link>
+        <Link to="/presupuestos" className={`flex items-center gap-3 px-6 py-3 transition-colors ${isActive('/presupuestos')}`}>
+          <FileText size={20} />
+          <span>Presupuestos</span>
+        </Link>
+        <Link to="/caja" className={`flex items-center gap-3 px-6 py-3 transition-colors ${isActive('/caja')}`}>
+          <DollarSign size={20} />
+          <span>Caja y Cobros</span>
+        </Link>
+        <Link to="/clientes" className={`flex items-center gap-3 px-6 py-3 transition-colors ${isActive('/clientes')}`}>
+          <Users size={20} />
+          <span>Clientes</span>
+        </Link>
+      </nav>
+    </div>
+  );
+}
+
+// Pantalla de Inicio Temporal
+function Inicio() {
+  return (
+    <div>
+      <h1 className="text-3xl font-bold text-gray-800 mb-4">Bienvenido al Sistema</h1>
+      <p className="text-gray-600">Selecciona una opción del menú lateral para comenzar.</p>
+    </div>
+  );
+}
+
+// Componente Principal que envuelve todo
 export default function App() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6">
-      <div className="bg-white p-8 rounded-xl shadow-lg text-center max-w-md w-full border-t-4 border-blue-600">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          Taller Metalúrgico
-        </h1>
-        <p className="text-gray-500 mb-6">
-          Sistema de Gestión Financiera
-        </p>
+    <Router>
+      <div className="flex bg-gray-100 min-h-screen">
+        <Sidebar />
         
-        <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition duration-200 w-full">
-          Conectar con el Backend
-        </button>
+        <div className="flex-1 p-8">
+          <Routes>
+            <Route path="/" element={<Inicio />} />
+            {/* 👇 Aquí es donde conectamos la ruta con tu nuevo componente 👇 */}
+            <Route path="/materiales" element={<Materiales />} />
+            
+            <Route path="/presupuestos" element={<h1 className="text-2xl font-bold">Módulo de Presupuestos (Próximamente)</h1>} />
+            <Route path="/caja" element={<h1 className="text-2xl font-bold">Módulo de Caja (Próximamente)</h1>} />
+            <Route path="/clientes" element={<h1 className="text-2xl font-bold">Módulo de Clientes (Próximamente)</h1>} />
+          </Routes>
+        </div>
       </div>
-    </div>
-  )
+    </Router>
+  );
 }
