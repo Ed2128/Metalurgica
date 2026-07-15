@@ -45,3 +45,10 @@ El servidor está construido con **Express.js** sobre Node.js, utilizando módul
 
 ## Reportes
 * `GET /api/reportes/deudores` -> Calcula el saldo pendiente de cada cliente cruzando el `monto_total` de sus `OrdenTrabajo` contra sus `Transaccion` de tipo "Ingreso". Filtra y devuelve solo los saldos mayores a 0.
+
+## Estructura del Frontend
+* **Tecnologías:** React + Vite + TypeScript.
+* **Estilos:** Tailwind CSS v4.
+* **Enrutamiento:** React Router DOM (estructura de Sidebar + Área de Contenido).
+* **Módulos Activos:**
+  * `Materiales`: Formulario y tabla de catálogo. Inyecta lógica de cálculo de tasas (25.11%) desde la UI hacia el backend.
