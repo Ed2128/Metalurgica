@@ -4,6 +4,7 @@ import Materiales from './Materiales'; // <-- Importación de Materiales
 import Clientes from './Clientes';     // <-- Importación de Clientes
 import Presupuestos from './Presupuestos';
 import Caja from './Caja';
+import Inicio from './Inicio';
 // Componente del Menú Lateral
 function Sidebar() {
   const location = useLocation();
@@ -13,7 +14,7 @@ function Sidebar() {
     <div className="w-64 bg-gray-900 text-white min-h-screen flex flex-col">
       <div className="p-6 text-2xl font-bold border-b border-gray-800 flex items-center gap-3">
         <span className="text-blue-500">⚙️</span>
-        Taller App
+        Metalúrgica 41 40
       </div>
       
       <nav className="flex-1 py-4">
@@ -38,16 +39,6 @@ function Sidebar() {
           <span>Clientes</span>
         </Link>
       </nav>
-    </div>
-  );
-}
-
-// Pantalla de Inicio Temporal
-function Inicio() {
-  return (
-    <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-4">Bienvenido al Sistema</h1>
-      <p className="text-gray-600">Selecciona una opción del menú lateral para comenzar.</p>
     </div>
   );
 }
