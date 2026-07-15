@@ -90,3 +90,76 @@ app.post('/api/clientes', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Servidor backend corriendo en http://localhost:${PORT}`);
 });
+
+// --- RUTAS DE ÓRDENES DE TRABAJO ---
+
+// 4. Crear un nuevo Presupuesto / Orden de Trabajo
+app.post('/api/ordenes', async (req, res) => {
+  try {
+    // Recibimos el ID del cliente, los materiales que lleva el trabajo y el coeficiente
+    const { 
+      clienteId, 
+      items, 
+      coeficiente_mano_obra = 2.5 // Por defecto 2.5x, pero modificable si es necesario
+    } = req.body;
+
+    // Validación rápida
+    if (!items || items.length === 0) {
+      return res.status(400).json({ error: "La orden debe tener al menos un material." });
+    }
+
+    // 1. Obtener los precios actuales de la base de datos para los materiales solicitados
+    const materialIds = items.map((item: any) => item.materialId);
+    const materialesDB = await prisma.material.findMany({
+      where: { id: { in: materialIds } }
+    });
+
+    // 2. Calcular los costos
+    let total_materiales = 0;
+    
+    const itemsParaGuardar = items.map((item: any) => {
+      const material = materialesDB.find(m => m.id === item.materialId);
+      
+      if (!material) {
+        throw new Error(`El material con ID ${item.materialId} no existe en el catálogo.`);
+      }
+
+      // Costo de este insumo específico (precio x cantidad)
+      const costo_item = material.precio_final * item.cantidad;
+      total_materiales += costo_item;
+
+      return {
+        materialId: material.id,
+        cantidad: item.cantidad,
+        precio_unitario: material.precio_final // CONGELAMOS el precio histórico aquí
+      };
+    });
+
+    // Calculamos la mano de obra y el total a cobrar
+    const total_mano_obra = total_materiales * coeficiente_mano_obra;
+    const monto_total = total_materiales + total_mano_obra;
+
+    // 3. Guardar todo junto en PostgreSQL (Prisma hace esto en una sola transacción segura)
+    const nuevaOrden = await prisma.ordenTrabajo.create({
+      data: {
+        clienteId,
+        total_materiales,
+        total_mano_obra,
+        monto_total,
+        // Inserción anidada: Crea la orden y sus items al mismo tiempo
+        items: {
+          create: itemsParaGuardar
+        }
+      },
+      include: {
+        items: true // Le decimos a Prisma que nos devuelva la orden con sus items para verla
+      }
+    });
+
+    res.status(201).json(nuevaOrden);
+  } catch (error: any) {
+    console.error("Error al crear la orden:", error);
+    // Devolvemos el mensaje de error específico si es que falló nuestra validación
+    res.status(500).json({ error: error.message || 'Hubo un problema al generar el presupuesto' });
+  }
+});
