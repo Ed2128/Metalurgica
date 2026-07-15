@@ -55,3 +55,10 @@ El servidor está construido con **Express.js** sobre Node.js, utilizando módul
   * `Presupuestos`: Combina Clientes y Materiales. Calcula mano de obra y genera registros anidados en la base de datos.
   * `Caja`: Muestra el historial de transacciones (`Ingreso`/`Egreso`) y procesa el saldo actual en un panel destacado.
   * `Inicio (Dashboard)`: Pantalla principal que consume el reporte de deudores cruzando órdenes de trabajo contra señas pagadas.
+
+  ---
+## Flujo de Vida del Dato (Resumen)
+1. **Catálogo:** Los `Materiales` y `Clientes` actúan como entidades maestras independientes.
+2. **Operación:** Se crea una `OrdenTrabajo` que congela el precio histórico de los materiales y asocia la deuda al cliente.
+3. **Finanzas:** Las `Transacciones` registran los pagos a cuenta (Ingresos) o los gastos del taller (Egresos), impactando en el saldo de caja en tiempo real.
+4. **Análisis:** El Dashboard cruza el costo total de las Órdenes contra los Ingresos asociados a cada cliente para calcular el saldo deudor exacto.
