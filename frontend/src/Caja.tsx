@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, ArrowUpCircle, ArrowDownCircle, Wallet } from 'lucide-react';
+import { DollarSign, ArrowUpCircle, ArrowDownCircle, Wallet, Pencil, Trash2, X } from 'lucide-react';
 
 export default function Caja() {
   const [saldoActual, setSaldoActual] = useState(0);
   const [historial, setHistorial] = useState<any[]>([]);
+
+  // Estado para controlar si estamos editando un movimiento
+  const [idEdicion, setIdEdicion] = useState<number | null>(null);
 
   // Estados del formulario
   const [tipo, setTipo] = useState('Ingreso');
@@ -11,7 +14,6 @@ export default function Caja() {
   const [categoria, setCategoria] = useState('Adelanto de Cliente');
   const [descripcion, setDescripcion] = useState('');
 
-  // Cargar el saldo y el historial desde el backend
   const cargarCaja = async () => {
     try {
       const respuesta = await fetch('http://localhost:3000/api/transacciones');
@@ -29,7 +31,14 @@ export default function Caja() {
     cargarCaja();
   }, []);
 
-  // Guardar un nuevo movimiento
+  const limpiarFormulario = () => {
+    setIdEdicion(null);
+    setTipo('Ingreso');
+    setMonto('');
+    setCategoria('Adelanto de Cliente');
+    setDescripcion('');
+  };
+
   const registrarMovimiento = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -38,9 +47,14 @@ export default function Caja() {
       return;
     }
 
+    const metodo = idEdicion ? 'PUT' : 'POST';
+    const url = idEdicion 
+      ? `http://localhost:3000/api/transacciones/${idEdicion}` 
+      : 'http://localhost:3000/api/transacciones';
+
     try {
-      const respuesta = await fetch('http://localhost:3000/api/transacciones', {
-        method: 'POST',
+      const respuesta = await fetch(url, {
+        method: metodo,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tipo,
@@ -51,12 +65,38 @@ export default function Caja() {
       });
 
       if (respuesta.ok) {
-        cargarCaja(); // Recargamos para actualizar el saldo
-        setMonto('');
-        setDescripcion('');
+        cargarCaja(); 
+        limpiarFormulario();
       }
     } catch (error) {
-      console.error("Error al registrar movimiento:", error);
+      console.error("Error al guardar movimiento:", error);
+    }
+  };
+
+  const iniciarEdicion = (mov: any) => {
+    setIdEdicion(mov.id);
+    setTipo(mov.tipo);
+    setMonto(mov.monto.toString());
+    setCategoria(mov.categoria);
+    setDescripcion(mov.descripcion || '');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const eliminarMovimiento = async (id: number) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar este movimiento? El saldo de la caja se verá afectado.")) return;
+
+    try {
+      const respuesta = await fetch(`http://localhost:3000/api/transacciones/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (respuesta.ok) {
+        cargarCaja();
+      } else {
+        alert("No se pudo eliminar el movimiento.");
+      }
+    } catch (error) {
+      console.error("Error al eliminar movimiento:", error);
     }
   };
 
@@ -71,7 +111,6 @@ export default function Caja() {
         
         {/* Panel Izquierdo: Saldo y Formulario */}
         <div className="col-span-1 space-y-6">
-          {/* Tarjeta de Saldo */}
           <div className="bg-blue-600 rounded-xl shadow-md p-6 text-white flex flex-col items-center justify-center">
             <Wallet size={40} className="opacity-80 mb-2" />
             <p className="text-blue-100 font-medium">Saldo Actual en Caja</p>
@@ -80,21 +119,29 @@ export default function Caja() {
             </h2>
           </div>
 
-          {/* Formulario de Movimiento */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold mb-4 text-gray-700">Registrar Movimiento</h3>
+          <div className={`p-6 rounded-xl shadow-sm border transition-colors ${idEdicion ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-700">
+                {idEdicion ? 'Editando Movimiento' : 'Registrar Movimiento'}
+              </h3>
+              {idEdicion && (
+                <button type="button" onClick={limpiarFormulario} className="text-gray-500 hover:text-red-500 flex items-center gap-1 text-sm">
+                  <X size={16} /> Cancelar
+                </button>
+              )}
+            </div>
+            
             <form onSubmit={registrarMovimiento} className="space-y-4">
-              
               <div className="flex gap-4">
                 <label className="flex-1 cursor-pointer">
                   <input type="radio" name="tipo" value="Ingreso" checked={tipo === 'Ingreso'} onChange={(e) => setTipo(e.target.value)} className="peer sr-only" />
-                  <div className="p-2 text-center rounded-md border border-gray-200 peer-checked:bg-green-50 peer-checked:border-green-500 peer-checked:text-green-700 font-medium transition-colors">
+                  <div className="p-2 text-center rounded-md border border-gray-200 peer-checked:bg-green-50 peer-checked:border-green-500 peer-checked:text-green-700 font-medium transition-colors bg-white">
                     Ingreso
                   </div>
                 </label>
                 <label className="flex-1 cursor-pointer">
                   <input type="radio" name="tipo" value="Egreso" checked={tipo === 'Egreso'} onChange={(e) => setTipo(e.target.value)} className="peer sr-only" />
-                  <div className="p-2 text-center rounded-md border border-gray-200 peer-checked:bg-red-50 peer-checked:border-red-500 peer-checked:text-red-700 font-medium transition-colors">
+                  <div className="p-2 text-center rounded-md border border-gray-200 peer-checked:bg-red-50 peer-checked:border-red-500 peer-checked:text-red-700 font-medium transition-colors bg-white">
                     Egreso
                   </div>
                 </label>
@@ -102,39 +149,27 @@ export default function Caja() {
 
               <div>
                 <label className="block text-sm text-gray-600 mb-1">Monto ($)</label>
-                <input 
-                  type="number" required value={monto} onChange={(e) => setMonto(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none" 
-                  placeholder="0.00" 
-                />
+                <input type="number" required value={monto} onChange={(e) => setMonto(e.target.value)} className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white" placeholder="0.00" />
               </div>
 
               <div>
                 <label className="block text-sm text-gray-600 mb-1">Categoría</label>
-                <input 
-                  type="text" required value={categoria} onChange={(e) => setCategoria(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none" 
-                  placeholder="Ej. Pago Proveedor, Retiro Dueño..." 
-                />
+                <input type="text" required value={categoria} onChange={(e) => setCategoria(e.target.value)} className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white" placeholder="Ej. Pago Proveedor, Retiro Dueño..." />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Descripción / Detalles (Opcional)</label>
-                <textarea 
-                  rows={2} value={descripcion} onChange={(e) => setDescripcion(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none resize-none" 
-                  placeholder="Anotaciones extra..." 
-                />
+                <label className="block text-sm text-gray-600 mb-1">Descripción / Detalles</label>
+                <textarea rows={2} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none resize-none bg-white" placeholder="Anotaciones extra..." />
               </div>
 
-              <button type="submit" className="w-full bg-gray-800 hover:bg-gray-900 text-white font-medium py-2.5 rounded-md transition-colors">
-                Guardar Movimiento
+              <button type="submit" className={`w-full text-white font-medium py-2.5 rounded-md transition-colors ${idEdicion ? 'bg-orange-500 hover:bg-orange-600' : 'bg-gray-800 hover:bg-gray-900'}`}>
+                {idEdicion ? 'Actualizar Movimiento' : 'Guardar Movimiento'}
               </button>
             </form>
           </div>
         </div>
 
-        {/* Panel Derecho: Historial de Transacciones */}
+        {/* Panel Derecho: Historial */}
         <div className="col-span-1 lg:col-span-2">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden h-full flex flex-col">
             <div className="p-4 border-b border-gray-200 bg-gray-50">
@@ -144,10 +179,11 @@ export default function Caja() {
             <div className="overflow-y-auto flex-1 p-0">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 uppercase">
+                  <tr className="bg-white border-b border-gray-200 text-xs text-gray-500 uppercase">
                     <th className="p-4 font-semibold">Fecha</th>
                     <th className="p-4 font-semibold">Detalle</th>
                     <th className="p-4 font-semibold text-right">Monto</th>
+                    <th className="p-4 font-semibold text-center w-24">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -168,11 +204,21 @@ export default function Caja() {
                       <td className={`p-4 text-right font-bold ${mov.tipo === 'Ingreso' ? 'text-green-600' : 'text-red-600'}`}>
                         {mov.tipo === 'Ingreso' ? '+' : '-'}${Number(mov.monto).toLocaleString('es-AR')}
                       </td>
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center gap-3">
+                          <button onClick={() => iniciarEdicion(mov)} className="text-gray-400 hover:text-orange-500 transition-colors" title="Editar">
+                            <Pencil size={18} />
+                          </button>
+                          <button onClick={() => eliminarMovimiento(mov.id)} className="text-gray-400 hover:text-red-500 transition-colors" title="Eliminar">
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                   {historial.length === 0 && (
                     <tr>
-                      <td colSpan={3} className="p-8 text-center text-gray-500">
+                      <td colSpan={4} className="p-8 text-center text-gray-500">
                         No hay movimientos registrados.
                       </td>
                     </tr>
