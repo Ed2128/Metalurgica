@@ -64,6 +64,52 @@ app.post('/api/materiales', async (req, res) => {
   }
 });
 
+// 2.1. Actualizar (Editar) un material existente
+app.put('/api/materiales/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { descripcion, unidad_medida, precio_base, tiene_iva_incluido } = req.body;
+
+    // Recalculamos el precio final por si el usuario cambió el precio base o el IVA
+    let precio_final = precio_base;
+    if (!tiene_iva_incluido) {
+      const porcentajeRecargo = 0.2511; // 21% + 3.31% + 0.80%
+      precio_final = precio_base + (precio_base * porcentajeRecargo);
+    }
+
+    const materialActualizado = await prisma.material.update({
+      where: { id: Number(id) },
+      data: {
+        descripcion,
+        unidad_medida,
+        precio_base,
+        tiene_iva_incluido,
+        precio_final
+      }
+    });
+
+    res.json(materialActualizado);
+  } catch (error) {
+    console.error("Error al actualizar material:", error);
+    res.status(500).json({ error: 'Hubo un problema al actualizar el material' });
+  }
+});
+
+// 2.2. Eliminar un material
+app.delete('/api/materiales/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.material.delete({
+      where: { id: Number(id) }
+    });
+
+    res.json({ message: 'Material eliminado correctamente' });
+  } catch (error) {
+    console.error("Error al eliminar material:", error);
+    res.status(500).json({ error: 'Hubo un problema al eliminar el material. Verifica que no esté siendo usado en un presupuesto.' });
+  }
+});
 
 // --- RUTAS DE CLIENTES ---
 
@@ -104,6 +150,33 @@ app.get('/api/clientes', async (req, res) => {
   }
 });
 
+// 3.1. Actualizar (Editar) un cliente
+app.put('/api/clientes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre, contacto, direccion } = req.body;
+
+    const clienteActualizado = await prisma.cliente.update({
+      where: { id: Number(id) },
+      data: { nombre, contacto, direccion }
+    });
+    res.json(clienteActualizado);
+  } catch (error) {
+    res.status(500).json({ error: 'Hubo un problema al actualizar el cliente' });
+  }
+});
+
+// 3.2. Eliminar un cliente
+app.delete('/api/clientes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.cliente.delete({ where: { id: Number(id) } });
+    res.json({ message: 'Cliente eliminado' });
+  } catch (error) {
+    // Si el cliente ya tiene un presupuesto o pago registrado, la base de datos protegerá el registro
+    res.status(400).json({ error: 'No se puede eliminar un cliente que ya tiene presupuestos o pagos registrados.' });
+  }
+});
 // --- RUTAS DE ÓRDENES DE TRABAJO ---
 
 // 4. Crear un nuevo Presupuesto / Orden de Trabajo
@@ -220,7 +293,32 @@ app.post('/api/transacciones', async (req, res) => {
     res.status(500).json({ error: 'Hubo un problema al guardar el movimiento de caja' });
   }
 });
+// 5.1. Actualizar (Editar) un movimiento de caja
+app.put('/api/transacciones/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tipo, monto, categoria, descripcion } = req.body;
 
+    const transaccionActualizada = await prisma.transaccion.update({
+      where: { id: Number(id) },
+      data: { tipo, monto, categoria, descripcion }
+    });
+    res.json(transaccionActualizada);
+  } catch (error) {
+    res.status(500).json({ error: 'Hubo un problema al actualizar el movimiento' });
+  }
+});
+
+// 5.2. Eliminar un movimiento de caja
+app.delete('/api/transacciones/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.transaccion.delete({ where: { id: Number(id) } });
+    res.json({ message: 'Movimiento eliminado' });
+  } catch (error) {
+    res.status(500).json({ error: 'Hubo un problema al eliminar el movimiento' });
+  }
+});
 // 6. Obtener el historial de la Caja Diaria y el Saldo Actual
 app.get('/api/transacciones', async (req, res) => {
   try {
