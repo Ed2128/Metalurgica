@@ -55,7 +55,10 @@ El servidor está construido con **Express.js** sobre Node.js, utilizando módul
   * `Presupuestos`: Combina Clientes y Materiales. Calcula mano de obra y genera registros anidados en la base de datos.
   * `Caja`: Muestra el historial de transacciones (`Ingreso`/`Egreso`) y procesa el saldo actual en un panel destacado.
   * `Inicio (Dashboard)`: Pantalla principal que consume el reporte de deudores cruzando órdenes de trabajo contra señas pagadas.
-
+ 
+### Decisiones de Experiencia de Usuario (UX)
+* **Gestión de Diálogos:** Se eliminaron las llamadas bloqueantes nativas de `alert()` y `confirm()`. Se unificó toda la interfaz interactiva bajo **SweetAlert2** con paletas de colores coincidentes con las directivas de marca de Tailwind CSS (azul principal, rojo defensivo).
+* **Adaptación Matricial de Planillas:** El lector del catálogo de materiales procesa los flujos de Excel convirtiéndolos en arreglos vectoriales en memoria pura (`ArrayBuffer`). Cuenta con escaneo dinámico de filas para tolerar títulos corporativos de proveedores e identificar columnas con normalización lingüística (independencia de tildes o mayúsculas).
   ---
 ## Flujo de Vida del Dato (Resumen)
 1. **Catálogo:** Los `Materiales` y `Clientes` actúan como entidades maestras independientes.
