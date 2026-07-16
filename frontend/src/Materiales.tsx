@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { PackagePlus, Search, Pencil, Trash2, X, Upload } from 'lucide-react';
 import * as XLSX from 'xlsx'; // Importamos la librería
-
+import Swal from 'sweetalert2';
 export default function Materiales() {
   const [materiales, setMateriales] = useState<any[]>([]);
   const [busqueda, setBusqueda] = useState('');
@@ -58,12 +58,46 @@ export default function Materiales() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const eliminarMaterial = async (id: number) => {
-    if (!window.confirm("¿Seguro que deseas eliminarlo?")) return;
+ const eliminarMaterial = async (id: number) => {
+    // Reemplazamos el window.confirm por un modal de SweetAlert2
+    const confirmacion = await Swal.fire({
+      title: '¿Estás seguro?',
+      text: "Esta acción no se puede deshacer y podría afectar el historial si el material está en uso.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444', // red-500 de Tailwind
+      cancelButtonColor: '#6b7280',  // gray-500 de Tailwind
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!confirmacion.isConfirmed) return;
+
     try {
-      const respuesta = await fetch(`http://localhost:3000/api/materiales/${id}`, { method: 'DELETE' });
-      if (respuesta.ok) cargarMateriales();
-    } catch (error) { console.error("Error:", error); }
+      const respuesta = await fetch(`http://localhost:3000/api/materiales/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (respuesta.ok) {
+        cargarMateriales();
+        Swal.fire({
+          title: '¡Eliminado!',
+          text: 'El material ha sido borrado del catálogo.',
+          icon: 'success',
+          confirmButtonColor: '#2563eb' // blue-600
+        });
+      } else {
+        const error = await respuesta.json();
+        Swal.fire({
+          title: 'Error',
+          text: error.error || "No se pudo eliminar el material.",
+          icon: 'error',
+          confirmButtonColor: '#2563eb'
+        });
+      }
+    } catch (error) {
+      console.error("Error al eliminar:", error);
+    }
   };
 
 // --- LÓGICA DE EXCEL MATRICIAL (Con lectura por ArrayBuffer) ---
@@ -144,7 +178,12 @@ export default function Materiales() {
         }
 
         if (materialesFormateados.length === 0) {
-          alert("Se encontraron las columnas, pero no hay datos válidos debajo de ellas.");
+          Swal.fire({
+            title: 'Formato incorrecto',
+            text: 'No se encontró la fila de encabezados. Verifica que existan columnas como "Descripción" y "Precio".',
+            icon: 'error',
+            confirmButtonColor: '#2563eb'
+          });
           return;
         }
 
@@ -156,19 +195,31 @@ export default function Materiales() {
 
         if (respuesta.ok) {
           const resultado = await respuesta.json();
-          alert(resultado.message);
+          Swal.fire({
+            title: '¡Importación Exitosa!',
+            text: resultado.message,
+            icon: 'success',
+            confirmButtonColor: '#2563eb'
+          });
           cargarMateriales(); 
         } else {
-          alert("Hubo un error en el servidor al cargar los datos.");
+          Swal.fire({
+            title: 'Error del Servidor',
+            text: 'Hubo un problema al guardar los datos en la base.',
+            icon: 'error',
+            confirmButtonColor: '#2563eb'
+          });
         }
       } catch (error: any) {
-        // Ahora el cartelito nos dirá exactamente qué línea falló
-        alert("Error técnico: " + error.message);
+        Swal.fire({
+          title: 'Error de Lectura',
+          text: 'El archivo Excel está dañado o tiene un formato ilegible.',
+          icon: 'error',
+          confirmButtonColor: '#2563eb'
+        });
         console.error("DETALLE DEL ERROR:", error);
       }
-      
-      if (archivoInputRef.current) archivoInputRef.current.value = '';
-    };
+    }
     
     // 2. EL OTRO CAMBIO CLAVE: Leemos como ArrayBuffer
     reader.readAsArrayBuffer(file);

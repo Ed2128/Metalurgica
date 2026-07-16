@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 import { DollarSign, ArrowUpCircle, ArrowDownCircle, Wallet, Pencil, Trash2, X } from 'lucide-react';
+import Swal from 'sweetalert2'; // Importamos SweetAlert2
 
 export default function Caja() {
   const [saldoActual, setSaldoActual] = useState(0);
   const [historial, setHistorial] = useState<any[]>([]);
-
-  // Estado para controlar si estamos editando un movimiento
   const [idEdicion, setIdEdicion] = useState<number | null>(null);
 
-  // Estados del formulario
   const [tipo, setTipo] = useState('Ingreso');
   const [monto, setMonto] = useState('');
   const [categoria, setCategoria] = useState('Adelanto de Cliente');
@@ -43,7 +41,12 @@ export default function Caja() {
     e.preventDefault();
     
     if (!monto || Number(monto) <= 0) {
-      alert("El monto debe ser mayor a 0");
+      Swal.fire({
+        title: 'Monto inválido',
+        text: 'El monto ingresado debe ser mayor a $0.',
+        icon: 'warning',
+        confirmButtonColor: '#2563eb'
+      });
       return;
     }
 
@@ -67,6 +70,20 @@ export default function Caja() {
       if (respuesta.ok) {
         cargarCaja(); 
         limpiarFormulario();
+        
+        Swal.fire({
+          title: idEdicion ? '¡Movimiento Actualizado!' : '¡Movimiento Registrado!',
+          text: idEdicion ? 'La caja se ha recalculado.' : 'El movimiento impactó en el saldo actual.',
+          icon: 'success',
+          confirmButtonColor: '#2563eb'
+        });
+      } else {
+        Swal.fire({
+          title: 'Error',
+          text: 'No se pudo guardar la transacción en el servidor.',
+          icon: 'error',
+          confirmButtonColor: '#2563eb'
+        });
       }
     } catch (error) {
       console.error("Error al guardar movimiento:", error);
@@ -83,7 +100,18 @@ export default function Caja() {
   };
 
   const eliminarMovimiento = async (id: number) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este movimiento? El saldo de la caja se verá afectado.")) return;
+    const confirmacion = await Swal.fire({
+      title: '¿Eliminar movimiento?',
+      text: "El saldo de la caja se reajustará. ¿Estás de acuerdo?",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, borrar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!confirmacion.isConfirmed) return;
 
     try {
       const respuesta = await fetch(`http://localhost:3000/api/transacciones/${id}`, {
@@ -92,8 +120,19 @@ export default function Caja() {
 
       if (respuesta.ok) {
         cargarCaja();
+        Swal.fire({
+          title: '¡Eliminado!',
+          text: 'El movimiento ha sido borrado del historial.',
+          icon: 'success',
+          confirmButtonColor: '#2563eb'
+        });
       } else {
-        alert("No se pudo eliminar el movimiento.");
+        Swal.fire({
+          title: 'Error',
+          text: 'No se pudo procesar el borrado del movimiento.',
+          icon: 'error',
+          confirmButtonColor: '#2563eb'
+        });
       }
     } catch (error) {
       console.error("Error al eliminar movimiento:", error);
@@ -109,7 +148,6 @@ export default function Caja() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Panel Izquierdo: Saldo y Formulario */}
         <div className="col-span-1 space-y-6">
           <div className="bg-blue-600 rounded-xl shadow-md p-6 text-white flex flex-col items-center justify-center">
             <Wallet size={40} className="opacity-80 mb-2" />
@@ -169,7 +207,6 @@ export default function Caja() {
           </div>
         </div>
 
-        {/* Panel Derecho: Historial */}
         <div className="col-span-1 lg:col-span-2">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden h-full flex flex-col">
             <div className="p-4 border-b border-gray-200 bg-gray-50">

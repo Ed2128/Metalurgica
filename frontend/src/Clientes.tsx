@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Users, UserPlus, Search, Pencil, Trash2, X } from 'lucide-react';
+import Swal from 'sweetalert2'; // Importamos SweetAlert2
 
 export default function Clientes() {
   const [clientes, setClientes] = useState<any[]>([]);
   const [busqueda, setBusqueda] = useState('');
-  
-  // Estado para controlar si estamos editando un cliente
   const [idEdicion, setIdEdicion] = useState<number | null>(null);
 
   const [nombre, setNombre] = useState('');
@@ -38,7 +37,6 @@ export default function Clientes() {
   const guardarCliente = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Si estamos editando usamos PUT, de lo contrario usamos POST
     const metodo = idEdicion ? 'PUT' : 'POST';
     const url = idEdicion 
       ? `http://localhost:3000/api/clientes/${idEdicion}` 
@@ -54,6 +52,20 @@ export default function Clientes() {
       if (respuesta.ok) {
         cargarClientes();
         limpiarFormulario();
+        
+        Swal.fire({
+          title: idEdicion ? '¡Cliente Actualizado!' : '¡Cliente Guardado!',
+          text: idEdicion ? 'Los cambios se guardaron con éxito.' : 'El cliente se registró en el sistema.',
+          icon: 'success',
+          confirmButtonColor: '#2563eb'
+        });
+      } else {
+        Swal.fire({
+          title: 'Error',
+          text: 'No se pudo guardar la información del cliente.',
+          icon: 'error',
+          confirmButtonColor: '#2563eb'
+        });
       }
     } catch (error) {
       console.error("Error al guardar cliente:", error);
@@ -69,7 +81,18 @@ export default function Clientes() {
   };
 
   const eliminarCliente = async (id: number) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este cliente?")) return;
+    const confirmacion = await Swal.fire({
+      title: '¿Estás seguro?',
+      text: "Se eliminarán los datos de contacto. No podrás revertir esto.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!confirmacion.isConfirmed) return;
 
     try {
       const respuesta = await fetch(`http://localhost:3000/api/clientes/${id}`, {
@@ -78,17 +101,26 @@ export default function Clientes() {
 
       if (respuesta.ok) {
         cargarClientes();
+        Swal.fire({
+          title: '¡Eliminado!',
+          text: 'El cliente ha sido borrado.',
+          icon: 'success',
+          confirmButtonColor: '#2563eb'
+        });
       } else {
         const error = await respuesta.json();
-        // Si el cliente ya tiene presupuestos o transacciones, el backend arrojará un error descriptivo
-        alert(error.error || "No se pudo eliminar el cliente.");
+        Swal.fire({
+          title: 'No se pudo eliminar',
+          text: error.error || "El cliente tiene un historial activo que impide su borrado.",
+          icon: 'error',
+          confirmButtonColor: '#2563eb'
+        });
       }
     } catch (error) {
       console.error("Error al eliminar cliente:", error);
     }
   };
 
-  // Filtrado de búsqueda en tiempo real
   const clientesFiltrados = clientes.filter((cli) => {
     const termino = busqueda.toLowerCase();
     const coincideNombre = cli.nombre.toLowerCase().includes(termino);
@@ -103,7 +135,6 @@ export default function Clientes() {
         Gestión de Clientes
       </h1>
 
-      {/* Formulario */}
       <div className={`p-6 rounded-xl shadow-sm border transition-colors ${idEdicion ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`}>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
@@ -136,7 +167,6 @@ export default function Clientes() {
         </form>
       </div>
 
-      {/* Tabla con Buscador */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="p-4 border-b border-gray-200 bg-gray-50">
           <div className="relative max-w-md">

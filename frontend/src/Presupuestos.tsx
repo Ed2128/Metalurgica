@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FileText, Plus, Trash2, Save, Printer, Eye, X, History } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 export default function Presupuestos() {
   const [pestana, setPestana] = useState<'nuevo' | 'historial'>('nuevo');
@@ -53,7 +54,12 @@ export default function Presupuestos() {
   const guardarPresupuesto = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clienteId || items.length === 0) {
-      alert("Selecciona un cliente y agrega al menos un material.");
+      Swal.fire({
+        title: 'Datos incompletos',
+        text: 'Por favor, selecciona un cliente y agrega al menos un material al desglose.',
+        icon: 'warning',
+        confirmButtonColor: '#2563eb'
+      });
       return;
     }
 
@@ -76,14 +82,25 @@ export default function Presupuestos() {
       });
 
       if (respuesta.ok) {
-        alert("¡Presupuesto guardado con éxito!");
+        Swal.fire({
+          title: '¡Presupuesto Generado!',
+          text: 'La orden de trabajo se ha guardado correctamente en el historial.',
+          icon: 'success',
+          confirmButtonColor: '#2563eb'
+        });
+        
         setClienteId('');
         setItems([]);
         cargarHistorial();
         setPestana('historial');
       } else {
         const err = await respuesta.json();
-        alert(`Error: ${err.error}`);
+        Swal.fire({
+          title: 'Error de Servidor',
+          text: err.error || 'No se pudo guardar la orden de trabajo.',
+          icon: 'error',
+          confirmButtonColor: '#2563eb'
+        });
       }
     } catch (error) {
       console.error(error);
