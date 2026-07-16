@@ -110,7 +110,45 @@ app.delete('/api/materiales/:id', async (req, res) => {
     res.status(500).json({ error: 'Hubo un problema al eliminar el material. Verifica que no esté siendo usado en un presupuesto.' });
   }
 });
+// 2.3. Carga masiva desde Excel (Bulk Insert)
+app.post('/api/materiales/bulk', async (req, res) => {
+  try {
+    const materialesExcel = req.body; // Recibimos el arreglo completo
 
+    // Mapeamos los datos y aplicamos la misma matemática de impuestos
+    const dataParaInsertar = materialesExcel.map((m: any) => {
+      const precio_base = Number(m.precio_base) || 0;
+      
+      // Aceptamos booleanos o textos como "Si", "Sí", "True" desde el Excel
+      const tiene_iva = m.tiene_iva_incluido === true || String(m.tiene_iva_incluido).toLowerCase().includes('s');
+      
+      let precio_final = precio_base;
+      if (!tiene_iva) {
+        const porcentajeRecargo = 0.2511; // 21% + 3.31% + 0.80%
+        precio_final = precio_base + (precio_base * porcentajeRecargo);
+      }
+
+      return {
+        descripcion: String(m.descripcion),
+        unidad_medida: String(m.unidad_medida || 'Unidad'),
+        precio_base,
+        tiene_iva_incluido: tiene_iva,
+        precio_final
+      };
+    });
+
+    // createMany es una función optimizada de Prisma para insertar miles de registros de golpe
+    const insertados = await prisma.material.createMany({
+      data: dataParaInsertar,
+      skipDuplicates: true // Evita que el proceso falle si hay algún error menor
+    });
+
+    res.status(201).json({ message: `¡Éxito! Se importaron ${insertados.count} materiales al catálogo.` });
+  } catch (error) {
+    console.error("Error en importación masiva:", error);
+    res.status(500).json({ error: 'Hubo un problema al procesar el Excel' });
+  }
+});
 // --- RUTAS DE CLIENTES ---
 
 // 3. Crear un nuevo cliente
@@ -247,6 +285,26 @@ app.post('/api/ordenes', async (req, res) => {
     console.error("Error al crear la orden:", error);
     // Devolvemos el mensaje de error específico si es que falló nuestra validación
     res.status(500).json({ error: error.message || 'Hubo un problema al generar el presupuesto' });
+  }
+});
+// Obtener historial de presupuestos/órdenes de trabajo
+app.get('/api/ordenes', async (req, res) => {
+  try {
+    const ordenes = await prisma.ordenTrabajo.findMany({
+      include: {
+        cliente: true,
+        items: {
+          include: {
+            material: true
+          }
+        }
+      },
+      orderBy: { id: 'desc' } // Los más recientes primero
+    });
+    res.json(ordenes);
+  } catch (error) {
+    console.error("Error al obtener órdenes:", error);
+    res.status(500).json({ error: 'Hubo un problema al consultar el historial de presupuestos' });
   }
 });
 

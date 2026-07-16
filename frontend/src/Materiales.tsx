@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react';
-import { PackagePlus, Search, Pencil, Trash2, X } from 'lucide-react'; // Añadimos iconos nuevos
+import { useState, useEffect, useRef } from 'react';
+import { PackagePlus, Search, Pencil, Trash2, X, Upload } from 'lucide-react';
+import * as XLSX from 'xlsx'; // Importamos la librería
 
 export default function Materiales() {
   const [materiales, setMateriales] = useState<any[]>([]);
   const [busqueda, setBusqueda] = useState('');
-  
-  // Nuevo estado para saber si estamos editando un material existente
   const [idEdicion, setIdEdicion] = useState<number | null>(null);
 
   const [descripcion, setDescripcion] = useState('');
@@ -13,21 +12,21 @@ export default function Materiales() {
   const [precioBase, setPrecioBase] = useState('');
   const [tieneIva, setTieneIva] = useState(false);
 
+  // Referencia oculta para abrir el explorador de archivos
+  const archivoInputRef = useRef<HTMLInputElement>(null);
+
   const cargarMateriales = async () => {
     try {
       const respuesta = await fetch('http://localhost:3000/api/materiales');
       const datos = await respuesta.json();
       setMateriales(datos);
     } catch (error) {
-      console.error("Error al cargar materiales:", error);
+      console.error("Error al cargar:", error);
     }
   };
 
-  useEffect(() => {
-    cargarMateriales();
-  }, []);
+  useEffect(() => { cargarMateriales(); }, []);
 
-  // Función para resetear el formulario a cero
   const limpiarFormulario = () => {
     setIdEdicion(null);
     setDescripcion('');
@@ -36,68 +35,144 @@ export default function Materiales() {
     setTieneIva(false);
   };
 
-  // Función que se ejecuta al presionar "Guardar"
   const guardarMaterial = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Si tenemos un idEdicion, hacemos PUT (Actualizar). Si no, hacemos POST (Crear)
     const metodo = idEdicion ? 'PUT' : 'POST';
-    const url = idEdicion 
-      ? `http://localhost:3000/api/materiales/${idEdicion}` 
-      : 'http://localhost:3000/api/materiales';
-
+    const url = idEdicion ? `http://localhost:3000/api/materiales/${idEdicion}` : 'http://localhost:3000/api/materiales';
     try {
       const respuesta = await fetch(url, {
         method: metodo,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          descripcion,
-          unidad_medida: unidadMedida,
-          precio_base: Number(precioBase),
-          tiene_iva_incluido: tieneIva
-        })
+        body: JSON.stringify({ descripcion, unidad_medida: unidadMedida, precio_base: Number(precioBase), tiene_iva_incluido: tieneIva })
       });
-
-      if (respuesta.ok) {
-        cargarMateriales();
-        limpiarFormulario();
-      }
-    } catch (error) {
-      console.error("Error al guardar material:", error);
-    }
+      if (respuesta.ok) { cargarMateriales(); limpiarFormulario(); }
+    } catch (error) { console.error("Error:", error); }
   };
 
-  // Función que inyecta los datos en el formulario cuando clickeamos "Editar"
   const iniciarEdicion = (mat: any) => {
     setIdEdicion(mat.id);
     setDescripcion(mat.descripcion);
     setUnidadMedida(mat.unidad_medida);
     setPrecioBase(mat.precio_base.toString());
     setTieneIva(mat.tiene_iva_incluido);
-    // Hacemos un poco de scroll hacia arriba para que el usuario vea el formulario
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Función para eliminar
   const eliminarMaterial = async (id: number) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este material?")) return;
-
+    if (!window.confirm("¿Seguro que deseas eliminarlo?")) return;
     try {
-      const respuesta = await fetch(`http://localhost:3000/api/materiales/${id}`, {
-        method: 'DELETE'
-      });
-
-      if (respuesta.ok) {
-        cargarMateriales();
-      } else {
-        const error = await respuesta.json();
-        alert(error.error || "No se pudo eliminar el material.");
-      }
-    } catch (error) {
-      console.error("Error al eliminar:", error);
-    }
+      const respuesta = await fetch(`http://localhost:3000/api/materiales/${id}`, { method: 'DELETE' });
+      if (respuesta.ok) cargarMateriales();
+    } catch (error) { console.error("Error:", error); }
   };
 
+// --- LÓGICA DE EXCEL MATRICIAL (Con lectura por ArrayBuffer) ---
+  const procesarExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        // 1. EL CAMBIO CLAVE: Procesamos la memoria cruda en lugar de texto binario
+        const data = new Uint8Array(evt.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        const hoja = workbook.Sheets[workbook.SheetNames[0]];
+        const datosRaw = XLSX.utils.sheet_to_json<any[]>(hoja, { header: 1 }); 
+
+        const normalizarTexto = (str: string) => 
+          String(str).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+        let filaEncabezados = -1;
+        let colDesc = -1;
+        let colPrecio = -1;
+
+        // Escanear de arriba hacia abajo para encontrar la fila real de los títulos
+        for (let i = 0; i < datosRaw.length; i++) {
+          const fila = datosRaw[i];
+          if (!Array.isArray(fila)) continue;
+
+          // Usamos Array.from para rellenar los "huecos" fantasma del Excel
+          const filaNormalizada = Array.from(fila).map(celda => celda ? normalizarTexto(celda) : '');
+
+          // Agregamos el chequeo de seguridad (val && val.includes)
+          const idxDesc = filaNormalizada.findIndex(val => 
+            ['descripcion', 'desc', 'nombre', 'articulo', 'detalle'].some(pc => val && val.includes(pc))
+          );
+          
+          const idxPrecio = filaNormalizada.findIndex(val => 
+            ['precio x kg', 'sin descuento', 'importe', 'precio', 'costo'].some(pc => val && val.includes(pc))
+          );
+
+          if (idxDesc !== -1 && idxPrecio !== -1) {
+            filaEncabezados = i;
+            colDesc = idxDesc;
+            colPrecio = idxPrecio;
+            break; 
+          }
+        }
+
+        if (filaEncabezados === -1) {
+          alert("No se encontró la fila de encabezados. Verifica que existan columnas como 'Descripción' y 'Precio' en algún lugar de la hoja.");
+          return;
+        }
+
+        const nombreColPrecio = normalizarTexto(String(datosRaw[filaEncabezados][colPrecio] || ''));
+        const esPorKg = nombreColPrecio.includes('kg');
+
+        const materialesFormateados = [];
+        for (let i = filaEncabezados + 1; i < datosRaw.length; i++) {
+          const fila = datosRaw[i];
+          if (!Array.isArray(fila) || fila.length === 0) continue;
+
+          const descRaw = fila[colDesc];
+          const precioRaw = fila[colPrecio];
+
+          const descripcion = descRaw ? String(descRaw).trim() : '';
+          const precioLimpio = String(precioRaw).replace('$', '').replace(',', '.').trim();
+          const precio_base = Number(precioLimpio) || 0;
+
+          if (descripcion && descripcion !== 'Sin descripción' && precio_base > 0) {
+            materialesFormateados.push({
+              descripcion,
+              unidad_medida: esPorKg ? 'Kg' : 'Unidad',
+              precio_base,
+              tiene_iva_incluido: false
+            });
+          }
+        }
+
+        if (materialesFormateados.length === 0) {
+          alert("Se encontraron las columnas, pero no hay datos válidos debajo de ellas.");
+          return;
+        }
+
+        const respuesta = await fetch('http://localhost:3000/api/materiales/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(materialesFormateados)
+        });
+
+        if (respuesta.ok) {
+          const resultado = await respuesta.json();
+          alert(resultado.message);
+          cargarMateriales(); 
+        } else {
+          alert("Hubo un error en el servidor al cargar los datos.");
+        }
+      } catch (error: any) {
+        // Ahora el cartelito nos dirá exactamente qué línea falló
+        alert("Error técnico: " + error.message);
+        console.error("DETALLE DEL ERROR:", error);
+      }
+      
+      if (archivoInputRef.current) archivoInputRef.current.value = '';
+    };
+    
+    // 2. EL OTRO CAMBIO CLAVE: Leemos como ArrayBuffer
+    reader.readAsArrayBuffer(file);
+  };
   const materialesFiltrados = materiales.filter((mat) =>
     mat.descripcion.toLowerCase().includes(busqueda.toLowerCase())
   );
@@ -109,17 +184,36 @@ export default function Materiales() {
         Catálogo de Materiales
       </h1>
 
-      {/* Formulario */}
       <div className={`p-6 rounded-xl shadow-sm border transition-colors ${idEdicion ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`}>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-gray-700">
-            {idEdicion ? 'Editando Material Existente' : 'Agregar Nuevo Insumo'}
+            {idEdicion ? 'Editando Material' : 'Agregar Nuevo Insumo'}
           </h2>
-          {idEdicion && (
-            <button type="button" onClick={limpiarFormulario} className="text-gray-500 hover:text-red-500 flex items-center gap-1 text-sm">
-              <X size={16} /> Cancelar edición
+          
+          <div className="flex items-center gap-3">
+            {idEdicion && (
+              <button type="button" onClick={limpiarFormulario} className="text-gray-500 hover:text-red-500 flex items-center gap-1 text-sm mr-4">
+                <X size={16} /> Cancelar edición
+              </button>
+            )}
+            
+            {/* Botón e Input oculto para Excel */}
+            <input 
+              type="file" 
+              accept=".xlsx, .xls" 
+              ref={archivoInputRef} 
+              onChange={procesarExcel} 
+              className="hidden" 
+            />
+            <button 
+              type="button" 
+              onClick={() => archivoInputRef.current?.click()}
+              className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-1.5 px-4 rounded-md transition-colors flex items-center gap-2"
+            >
+              <Upload size={16} />
+              Importar Excel
             </button>
-          )}
+          </div>
         </div>
 
         <form onSubmit={guardarMaterial} className="flex flex-wrap gap-4 items-end">
