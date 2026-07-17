@@ -2,6 +2,8 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { prisma } from './prisma.js';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,6 +11,54 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// ==========================================
+//  MIDDLEWARE DE SEGURIDAD
+// ==========================================
+const JWT_SECRET = process.env.JWT_SECRET || 'clave_por_defecto';
+
+const verificarToken = (req: any, res: any, next: any) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; 
+  if (!token) return res.status(403).json({ error: 'Acceso denegado.' });
+
+  jwt.verify(token, JWT_SECRET, (err: any, usuarioDecodificado: any) => {
+    if (err) return res.status(401).json({ error: 'Token inválido.' });
+    req.usuario = usuarioDecodificado;
+    next(); 
+  });
+};
+
+// ==========================================
+//  RUTAS DE AUTENTICACIÓN 
+// ==========================================
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { email, password, nombre } = req.body;
+    const passwordEncriptada = await bcrypt.hash(password, 10);
+    const usuario = await prisma.usuario.create({ data: { email, password: passwordEncriptada, nombre } });
+    res.json({ message: 'Administrador creado con éxito', email: usuario.email });
+  } catch (error) {
+    res.status(400).json({ error: 'El correo ya está registrado o hubo un error' });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const usuario = await prisma.usuario.findUnique({ where: { email } });
+    
+    if (!usuario) return res.status(401).json({ error: 'Credenciales inválidas' });
+    
+    const passwordValida = await bcrypt.compare(password, usuario.password);
+    if (!passwordValida) return res.status(401).json({ error: 'Credenciales inválidas' });
+    
+    const token = jwt.sign({ id: usuario.id, email: usuario.email }, JWT_SECRET, { expiresIn: '8h' });
+    res.json({ token, nombre: usuario.nombre });
+  } catch (error) {
+    console.error(error); // Para ver el error real en la terminal si algo más falla
+    res.status(500).json({ error: 'Error en el servidor al intentar iniciar sesión' });
+  }
+});
 // --- RUTAS DE MATERIALES ---
 
 // 1. Obtener todos los materiales (Ya lo teníamos)

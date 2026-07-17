@@ -81,3 +81,10 @@ model Transaccion {
   proveedor      Proveedor?    @relation(fields: [proveedorId], references: [id])
   ordenTrabajo   OrdenTrabajo? @relation(fields: [ordenTrabajoId], references: [id])
 }
+
+model Usuario {
+  id       Int      @id @default(autoincrement())
+  email    String   @unique
+  password String
+  nombre   String
+}
