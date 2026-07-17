@@ -43,6 +43,10 @@ El servidor está construido con **Express.js** sobre Node.js, utilizando módul
 * **Ejecución en desarrollo:** Se utiliza `tsx watch` para recarga en caliente y compilación de TypeScript al vuelo.
 * **CORS:** Habilitado globalmente para permitir futuras peticiones desde el frontend en React.
 
+### Seguridad y Autenticación
+* **Protección de API:** El sistema implementa un modelo de seguridad por tokens. Todas las rutas transaccionales están protegidas por un middleware de Express (`verificarToken`) que rechaza peticiones no firmadas (401/403).
+* **Estándar:** Se utilizan **JSON Web Tokens (JWT)** con un tiempo de vida (TTL) de 8 horas para mantener las sesiones activas durante la jornada laboral.
+* **Cifrado de Credenciales:** Las contraseñas nunca se almacenan en texto plano. Se emplea `bcryptjs` (factor de costo: 10) para aplicar un hash unidireccional, garantizando que una brecha en la base de datos no exponga las credenciales del administrador.
 ## Reportes
 * `GET /api/reportes/deudores` -> Calcula el saldo pendiente de cada cliente cruzando el `monto_total` de sus `OrdenTrabajo` contra sus `Transaccion` de tipo "Ingreso". Filtra y devuelve solo los saldos mayores a 0.
 
