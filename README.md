@@ -1,4 +1,4 @@
-# Sistema de Gestión Financiera - Taller Metalúrgico 40 41
+# Sistema de Gestión Financiera - Taller Metalúrgico 41 40
 
 ## Descripción
 Aplicación web diseñada para centralizar, automatizar y gestionar las finanzas y presupuestos de un taller metalúrgico. El sistema reemplaza el uso de múltiples planillas de Excel aisladas, permitiendo la generación de presupuestos precisos, el control de la caja diaria, el seguimiento de cuentas corrientes de clientes/proveedores y la separación nítida entre los ingresos del negocio y los retiros personales del dueño.
