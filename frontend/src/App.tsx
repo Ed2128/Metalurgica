@@ -1,66 +1,113 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, Package, FileText, DollarSign, Users } from 'lucide-react';
-import Materiales from './Materiales'; // <-- Importación de Materiales
-import Clientes from './Clientes';     // <-- Importación de Clientes
+import { useState } from 'react';
+import { Home, Users, Wrench, FileText, DollarSign, LogOut } from 'lucide-react';
+import Clientes from './Clientes';
+import Materiales from './Materiales';
 import Presupuestos from './Presupuestos';
 import Caja from './Caja';
-import Inicio from './Inicio';
-// Componente del Menú Lateral
-function Sidebar() {
+import Login from './Login';
+
+// ==========================================
+// COMPONENTE DEL MENÚ LATERAL (Sidebar)
+// ==========================================
+function Sidebar({ onLogout, nombreUsuario }: { onLogout: () => void, nombreUsuario: string }) {
   const location = useLocation();
-  const isActive = (path: string) => location.pathname === path ? 'bg-gray-800 border-l-4 border-blue-500' : 'hover:bg-gray-800';
+  
+  const menu = [
+    { name: 'Dashboard', path: '/', icon: <Home size={20} /> },
+    { name: 'Clientes', path: '/clientes', icon: <Users size={20} /> },
+    { name: 'Materiales', path: '/materiales', icon: <Wrench size={20} /> },
+    { name: 'Presupuestos', path: '/presupuestos', icon: <FileText size={20} /> },
+    { name: 'Caja Diaria', path: '/caja', icon: <DollarSign size={20} /> },
+  ];
 
   return (
-    <div className="w-64 bg-gray-900 text-white min-h-screen flex flex-col">
-      <div className="p-6 text-2xl font-bold border-b border-gray-800 flex items-center gap-3">
-        <span className="text-blue-500">⚙️</span>
-        Metalúrgica 41 40
+    <div className="w-64 bg-gray-900 text-white flex flex-col min-h-screen print:hidden">
+      <div className="p-6">
+        <h2 className="text-2xl font-bold text-blue-400">Metalúrgica</h2>
+        <p className="text-gray-400 text-xs mt-1">Gestión de Taller</p>
       </div>
       
-      <nav className="flex-1 py-4">
-        <Link to="/" className={`flex items-center gap-3 px-6 py-3 transition-colors ${isActive('/')}`}>
-          <Home size={20} />
-          <span>Inicio</span>
-        </Link>
-        <Link to="/materiales" className={`flex items-center gap-3 px-6 py-3 transition-colors ${isActive('/materiales')}`}>
-          <Package size={20} />
-          <span>Materiales</span>
-        </Link>
-        <Link to="/presupuestos" className={`flex items-center gap-3 px-6 py-3 transition-colors ${isActive('/presupuestos')}`}>
-          <FileText size={20} />
-          <span>Presupuestos</span>
-        </Link>
-        <Link to="/caja" className={`flex items-center gap-3 px-6 py-3 transition-colors ${isActive('/caja')}`}>
-          <DollarSign size={20} />
-          <span>Caja y Cobros</span>
-        </Link>
-        <Link to="/clientes" className={`flex items-center gap-3 px-6 py-3 transition-colors ${isActive('/clientes')}`}>
-          <Users size={20} />
-          <span>Clientes</span>
-        </Link>
+      <nav className="flex-1 px-4 space-y-2">
+        {menu.map((item) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <Link 
+              key={item.name} 
+              to={item.path} 
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-blue-600 text-white shadow-md' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`}
+            >
+              {item.icon}
+              <span className="font-medium">{item.name}</span>
+            </Link>
+          );
+        })}
       </nav>
+
+      {/* Panel inferior con datos del usuario y botón de salir */}
+      <div className="p-4 bg-gray-800 mt-auto border-t border-gray-700">
+        <div className="flex items-center justify-between">
+          <div className="truncate">
+            <p className="text-sm font-medium text-white truncate">{nombreUsuario}</p>
+            <p className="text-xs text-green-400">En línea</p>
+          </div>
+          <button onClick={onLogout} title="Cerrar Sesión" className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-lg transition-colors">
+            <LogOut size={20} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
 
-// Componente Principal que envuelve todo
+// ==========================================
+// APLICACIÓN PRINCIPAL (Controlador de Sesión)
+// ==========================================
 export default function App() {
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [nombre, setNombre] = useState<string>(localStorage.getItem('nombre') || '');
+
+  // Función que se ejecuta cuando el Login es exitoso
+  const iniciarSesion = (nuevoToken: string, nombreUsuario: string) => {
+    localStorage.setItem('token', nuevoToken);
+    localStorage.setItem('nombre', nombreUsuario);
+    setToken(nuevoToken);
+    setNombre(nombreUsuario);
+  };
+
+  // Función para cerrar sesión
+  const cerrarSesion = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('nombre');
+    setToken(null);
+    setNombre('');
+  };
+
+  // SI NO HAY TOKEN, SOLO MOSTRAMOS EL LOGIN
+  if (!token) {
+    return <Login onLogin={iniciarSesion} />;
+  }
+
+  // SI HAY TOKEN, MOSTRAMOS EL SISTEMA
   return (
     <Router>
-      <div className="flex bg-gray-100 min-h-screen">
-        <Sidebar />
+      <div className="flex bg-gray-50 min-h-screen">
+        <Sidebar onLogout={cerrarSesion} nombreUsuario={nombre} />
         
-        <div className="flex-1 p-8">
+        <main className="flex-1 p-8 overflow-y-auto">
           <Routes>
-            <Route path="/" element={<Inicio />} />
-            
-            {/* 👇 Rutas conectadas a los archivos reales 👇 */}
-            <Route path="/materiales" element={<Materiales />} />
+            <Route path="/" element={
+              <div className="space-y-4">
+                <h1 className="text-3xl font-bold text-gray-800">Panel Principal</h1>
+                <p className="text-gray-600">Bienvenido al sistema de gestión.</p>
+              </div>
+            } />
             <Route path="/clientes" element={<Clientes />} />
+            <Route path="/materiales" element={<Materiales />} />
             <Route path="/presupuestos" element={<Presupuestos />} />
             <Route path="/caja" element={<Caja />} />
           </Routes>
-        </div>
+        </main>
       </div>
     </Router>
   );

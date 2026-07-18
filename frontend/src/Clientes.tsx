@@ -11,18 +11,26 @@ export default function Clientes() {
   const [contacto, setContacto] = useState('');
   const [direccion, setDireccion] = useState('');
 
-  const cargarClientes = async () => {
+ const cargarClientes = async () => {
     try {
-      const res = await fetch('http://localhost:3000/api/clientes');
+      let token = localStorage.getItem('token') || '';
+      token = token.replace(/^"|"$/g, '');
+
+      const res = await fetch('http://localhost:3000/api/clientes', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
       if (res.ok) {
         const datos = await res.json();
         setClientes(datos);
+      } else {
+        setClientes([]); // Evita el pantallazo blanco
       }
     } catch (error) {
       console.error("Error al cargar clientes:", error);
+      setClientes([]);
     }
   };
-
   useEffect(() => {
     cargarClientes();
   }, []);
@@ -45,7 +53,7 @@ export default function Clientes() {
     try {
       const respuesta = await fetch(url, {
         method: metodo,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')?.replace(/^"|"$/g, '')}` },
         body: JSON.stringify({ nombre, contacto, direccion })
       });
 
@@ -96,9 +104,11 @@ export default function Clientes() {
 
     try {
       const respuesta = await fetch(`http://localhost:3000/api/clientes/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { 
+          'Authorization': `Bearer ${localStorage.getItem('token')?.replace(/^"|"$/g, '')}` 
+        }
       });
-
       if (respuesta.ok) {
         cargarClientes();
         Swal.fire({

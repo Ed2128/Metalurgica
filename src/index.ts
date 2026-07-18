@@ -4,7 +4,7 @@ import cors from 'cors';
 import { prisma } from './prisma.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-
+import 'dotenv/config';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -12,22 +12,36 @@ app.use(cors());
 app.use(express.json());
 
 // ==========================================
-//  MIDDLEWARE DE SEGURIDAD
+// 2. MIDDLEWARE DE SEGURIDAD (Con depuración)
 // ==========================================
 const JWT_SECRET = process.env.JWT_SECRET || 'clave_por_defecto';
 
 const verificarToken = (req: any, res: any, next: any) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; 
-  if (!token) return res.status(403).json({ error: 'Acceso denegado.' });
+  
+  // Extraemos el token después de la palabra "Bearer "
+  let token = authHeader && authHeader.split(' ')[1]; 
+
+  if (!token) {
+    console.log("❌ Rechazado: No se recibió ningún token de React.");
+    return res.status(403).json({ error: 'Acceso denegado.' });
+  }
+
+  // LIMPIEZA EXTREMA: Quitamos espacios ocultos o comillas que puedan romper la matemática
+  token = token.trim().replace(/^"|"$/g, '');
 
   jwt.verify(token, JWT_SECRET, (err: any, usuarioDecodificado: any) => {
-    if (err) return res.status(401).json({ error: 'Token inválido.' });
+    if (err) {
+      // ESTO ES LO QUE QUEREMOS VER EN LA TERMINAL
+      console.log("❌ Token rechazado por JWT. Motivo exacto:", err.message);
+      return res.status(401).json({ error: 'Token inválido.', detalle: err.message });
+    }
+    
+    // Si la matemática coincide, le abrimos la puerta
     req.usuario = usuarioDecodificado;
     next(); 
   });
 };
-
 // ==========================================
 //  RUTAS DE AUTENTICACIÓN 
 // ==========================================
@@ -62,7 +76,7 @@ app.post('/api/auth/login', async (req, res) => {
 // --- RUTAS DE MATERIALES ---
 
 // 1. Obtener todos los materiales (Ya lo teníamos)
-app.get('/api/materiales', async (req, res) => {
+app.get('/api/materiales',verificarToken, async (req, res) => {
   try {
     const materiales = await prisma.material.findMany();
     res.json(materiales);
@@ -73,7 +87,7 @@ app.get('/api/materiales', async (req, res) => {
 });
 
 // 2. Crear un nuevo material (Con impuestos dinámicos)
-app.post('/api/materiales', async (req, res) => {
+app.post('/api/materiales',verificarToken, async (req, res) => {
   try {
     // Extraemos los datos del body, permitiendo que ingresen los impuestos
     // Asignamos valores por defecto solo por si el frontend decide no enviarlos
@@ -115,7 +129,7 @@ app.post('/api/materiales', async (req, res) => {
 });
 
 // 2.1. Actualizar (Editar) un material existente
-app.put('/api/materiales/:id', async (req, res) => {
+app.put('/api/materiales/:id',verificarToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { descripcion, unidad_medida, precio_base, tiene_iva_incluido } = req.body;
@@ -146,7 +160,7 @@ app.put('/api/materiales/:id', async (req, res) => {
 });
 
 // 2.2. Eliminar un material
-app.delete('/api/materiales/:id', async (req, res) => {
+app.delete('/api/materiales/:id',verificarToken,   async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -161,7 +175,7 @@ app.delete('/api/materiales/:id', async (req, res) => {
   }
 });
 // 2.3. Carga masiva desde Excel (Bulk Insert)
-app.post('/api/materiales/bulk', async (req, res) => {
+app.post('/api/materiales/bulk',verificarToken, async (req, res) => {
   try {
     const materialesExcel = req.body; // Recibimos el arreglo completo
 
@@ -202,7 +216,7 @@ app.post('/api/materiales/bulk', async (req, res) => {
 // --- RUTAS DE CLIENTES ---
 
 // 3. Crear un nuevo cliente
-app.post('/api/clientes', async (req, res) => {
+app.post('/api/clientes',verificarToken, async (req, res) => {
   try {
     const { nombre, contacto, direccion } = req.body;
 
@@ -226,7 +240,7 @@ app.listen(PORT, () => {
 });
 
 // Obtener todos los clientes
-app.get('/api/clientes', async (req, res) => {
+app.get('/api/clientes',verificarToken, async (req, res) => {
   try {
     const clientes = await prisma.cliente.findMany({
       orderBy: { id: 'desc' } // Los ordenamos para que los más nuevos salgan arriba
@@ -239,7 +253,7 @@ app.get('/api/clientes', async (req, res) => {
 });
 
 // 3.1. Actualizar (Editar) un cliente
-app.put('/api/clientes/:id', async (req, res) => {
+app.put('/api/clientes/:id',verificarToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { nombre, contacto, direccion } = req.body;
@@ -255,7 +269,7 @@ app.put('/api/clientes/:id', async (req, res) => {
 });
 
 // 3.2. Eliminar un cliente
-app.delete('/api/clientes/:id', async (req, res) => {
+app.delete('/api/clientes/:id',verificarToken, async (req, res) => {
   try {
     const { id } = req.params;
     await prisma.cliente.delete({ where: { id: Number(id) } });
@@ -268,7 +282,7 @@ app.delete('/api/clientes/:id', async (req, res) => {
 // --- RUTAS DE ÓRDENES DE TRABAJO ---
 
 // 4. Crear un nuevo Presupuesto / Orden de Trabajo
-app.post('/api/ordenes', async (req, res) => {
+app.post('/api/ordenes',verificarToken, async (req, res) => {
   try {
     // Recibimos el ID del cliente, los materiales que lleva el trabajo y el coeficiente
     const { 
@@ -338,7 +352,7 @@ app.post('/api/ordenes', async (req, res) => {
   }
 });
 // Obtener historial de presupuestos/órdenes de trabajo
-app.get('/api/ordenes', async (req, res) => {
+app.get('/api/ordenes',verificarToken, async (req, res) => {
   try {
     const ordenes = await prisma.ordenTrabajo.findMany({
       include: {
@@ -361,7 +375,7 @@ app.get('/api/ordenes', async (req, res) => {
 // --- RUTAS DE TRANSACCIONES (CAJA Y COBROS) ---
 
 // 5. Registrar un nuevo movimiento de caja (Ingreso o Egreso)
-app.post('/api/transacciones', async (req, res) => {
+app.post('/api/transacciones',verificarToken, async (req, res) => {
   try {
     const { 
       tipo,         // Obligatorio: "Ingreso" o "Egreso"
@@ -402,7 +416,7 @@ app.post('/api/transacciones', async (req, res) => {
   }
 });
 // 5.1. Actualizar (Editar) un movimiento de caja
-app.put('/api/transacciones/:id', async (req, res) => {
+app.put('/api/transacciones/:id',verificarToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { tipo, monto, categoria, descripcion } = req.body;
@@ -418,7 +432,7 @@ app.put('/api/transacciones/:id', async (req, res) => {
 });
 
 // 5.2. Eliminar un movimiento de caja
-app.delete('/api/transacciones/:id', async (req, res) => {
+app.delete('/api/transacciones/:id',verificarToken, async (req, res) => {
   try {
     const { id } = req.params;
     await prisma.transaccion.delete({ where: { id: Number(id) } });
@@ -428,7 +442,7 @@ app.delete('/api/transacciones/:id', async (req, res) => {
   }
 });
 // 6. Obtener el historial de la Caja Diaria y el Saldo Actual
-app.get('/api/transacciones', async (req, res) => {
+app.get('/api/transacciones',verificarToken, async (req, res) => {
   try {
     // Buscamos todas las transacciones, ordenadas de la más nueva a la más vieja
     const transacciones = await prisma.transaccion.findMany({
@@ -460,7 +474,7 @@ app.get('/api/transacciones', async (req, res) => {
 // --- RUTAS DE REPORTES ---
 
 // 7. Reporte de Deudores (Clientes con saldo pendiente)
-app.get('/api/reportes/deudores', async (req, res) => {
+app.get('/api/reportes/deudores',verificarToken, async (req, res) => {
   try {
     // Buscamos todos los clientes e incluimos sus trabajos y sus pagos
     const clientes = await prisma.cliente.findMany({

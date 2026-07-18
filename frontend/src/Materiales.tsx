@@ -15,13 +15,32 @@ export default function Materiales() {
   // Referencia oculta para abrir el explorador de archivos
   const archivoInputRef = useRef<HTMLInputElement>(null);
 
-  const cargarMateriales = async () => {
+ const cargarMateriales = async () => {
     try {
-      const respuesta = await fetch('http://localhost:3000/api/materiales');
-      const datos = await respuesta.json();
-      setMateriales(datos);
+      // 1. Obtenemos el token y limpiamos posibles comillas accidentales
+      let token = localStorage.getItem('token') || '';
+      token = token.replace(/^"|"$/g, ''); // Quita comillas al inicio y final si las hay
+
+      // Para ver en la consola (F12) si el token realmente está en la variable
+      console.log("Intentando enviar Token al servidor:", token.substring(0, 20) + "...");
+
+      const respuesta = await fetch('http://localhost:3000/api/materiales', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (respuesta.ok) {
+        const datos = await respuesta.json();
+        setMateriales(datos);
+      } else {
+        const error = await respuesta.json();
+        console.error("El servidor rechazó el token. Motivo:", error);
+        setMateriales([]); 
+      }
     } catch (error) {
-      console.error("Error al cargar:", error);
+      console.error("Error de conexión al cargar materiales:", error);
+      setMateriales([]);
     }
   };
 
@@ -42,11 +61,47 @@ export default function Materiales() {
     try {
       const respuesta = await fetch(url, {
         method: metodo,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ descripcion, unidad_medida: unidadMedida, precio_base: Number(precioBase), tiene_iva_incluido: tieneIva })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        // Aquí hacemos la "traducción" de nombres:
+        // nombre_en_bd: nombre_en_react
+        body: JSON.stringify({ 
+          descripcion: descripcion,
+          unidad_medida: unidadMedida,
+          precio_final: Number(precioBase),
+          tiene_iva_incluido: tieneIva
+        })
       });
-      if (respuesta.ok) { cargarMateriales(); limpiarFormulario(); }
-    } catch (error) { console.error("Error:", error); }
+
+      if (respuesta.ok) {
+        limpiarFormulario();
+        cargarMateriales();
+        Swal.fire({
+          title: '¡Guardado!',
+          text: 'El material se guardó correctamente.',
+          icon: 'success',
+          confirmButtonColor: '#2563eb'
+        });
+      } else {
+        const errorData = await respuesta.json();
+        Swal.fire({
+          title: 'Error',
+          text: errorData.error || 'No se pudo guardar el material.',
+          icon: 'error',
+          confirmButtonColor: '#2563eb'
+        });
+      }
+    } catch (error) {
+      console.error('Error al guardar material:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'No se pudo conectar con el servidor.',
+        icon: 'error',
+        confirmButtonColor: '#2563eb'
+      });
+    }
   };
 
   const iniciarEdicion = (mat: any) => {

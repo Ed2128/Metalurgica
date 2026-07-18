@@ -16,8 +16,14 @@ export default function Presupuestos() {
 
   const cargarDatosMaestros = async () => {
     try {
-      const resClientes = await fetch('http://localhost:3000/api/clientes');
-      const resMateriales = await fetch('http://localhost:3000/api/materiales');
+      // 1. Preparamos el token y los headers una sola vez
+      const token = localStorage.getItem('token')?.replace(/^"|"$/g, '') || '';
+      const headers = { 'Authorization': `Bearer ${token}` };
+
+      // 2. Se lo pasamos a ambos fetch
+      const resClientes = await fetch('http://localhost:3000/api/clientes', { headers });
+      const resMateriales = await fetch('http://localhost:3000/api/materiales', { headers });
+      
       if (resClientes.ok) setClientes(await resClientes.json());
       if (resMateriales.ok) setMateriales(await resMateriales.json());
     } catch (error) {
@@ -27,15 +33,21 @@ export default function Presupuestos() {
 
   const cargarHistorial = async () => {
     try {
-      const respuesta = await fetch('http://localhost:3000/api/ordenes');
+      const token = localStorage.getItem('token')?.replace(/^"|"$/g, '') || '';
+      const respuesta = await fetch('http://localhost:3000/api/ordenes', { 
+        headers: { 'Authorization': `Bearer ${token}` } 
+      });
+      
       if (respuesta.ok) {
         setHistorial(await respuesta.json());
+      } else {
+        setHistorial([]); // Evita pantallazos blancos si el token falla
       }
     } catch (error) {
       console.error("Error al cargar historial:", error);
+      setHistorial([]);
     }
   };
-
   useEffect(() => {
     cargarDatosMaestros();
     cargarHistorial();
@@ -73,7 +85,7 @@ export default function Presupuestos() {
     try {
       const respuesta = await fetch('http://localhost:3000/api/ordenes', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' , 'Authorization': `Bearer ${localStorage.getItem('token')?.replace(/^"|"$/g, '')}` },
         body: JSON.stringify({
           clienteId: Number(clienteId),
           coeficiente_mano_obra: coeficiente,

@@ -14,14 +14,24 @@ export default function Caja() {
 
   const cargarCaja = async () => {
     try {
-      const respuesta = await fetch('http://localhost:3000/api/transacciones');
+      let token = localStorage.getItem('token') || '';
+      token = token.replace(/^"|"$/g, '');
+
+      const respuesta = await fetch('http://localhost:3000/api/transacciones', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
       if (respuesta.ok) {
         const datos = await respuesta.json();
         setSaldoActual(datos.saldo_actual);
         setHistorial(datos.historial);
+      } else {
+        setSaldoActual(0);
+        setHistorial([]); // Evita el pantallazo blanco
       }
     } catch (error) {
       console.error("Error al cargar la caja:", error);
+      setHistorial([]);
     }
   };
 
@@ -58,7 +68,7 @@ export default function Caja() {
     try {
       const respuesta = await fetch(url, {
         method: metodo,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' , 'Authorization': `Bearer ${localStorage.getItem('token')?.replace(/^"|"$/g, '')}` },
         body: JSON.stringify({
           tipo,
           monto: Number(monto),
