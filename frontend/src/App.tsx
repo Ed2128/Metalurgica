@@ -6,7 +6,7 @@ import Materiales from './Materiales';
 import Presupuestos from './Presupuestos';
 import Caja from './Caja';
 import Login from './Login';
-
+import Inicio from './Inicio';
 // ==========================================
 // COMPONENTE DEL MENÚ LATERAL (Sidebar)
 // ==========================================
@@ -14,7 +14,7 @@ function Sidebar({ onLogout, nombreUsuario }: { onLogout: () => void, nombreUsua
   const location = useLocation();
   
   const menu = [
-    { name: 'Dashboard', path: '/', icon: <Home size={20} /> },
+    { name: 'Inicio', path: '/', icon: <Home size={20} /> },
     { name: 'Clientes', path: '/clientes', icon: <Users size={20} /> },
     { name: 'Materiales', path: '/materiales', icon: <Wrench size={20} /> },
     { name: 'Presupuestos', path: '/presupuestos', icon: <FileText size={20} /> },
@@ -24,7 +24,7 @@ function Sidebar({ onLogout, nombreUsuario }: { onLogout: () => void, nombreUsua
   return (
     <div className="w-64 bg-gray-900 text-white flex flex-col min-h-screen print:hidden">
       <div className="p-6">
-        <h2 className="text-2xl font-bold text-blue-400">Metalúrgica</h2>
+        <h2 className="text-2xl font-bold text-blue-400">Metalúrgica 41 40</h2>
         <p className="text-gray-400 text-xs mt-1">Gestión de Taller</p>
       </div>
       
@@ -96,12 +96,7 @@ export default function App() {
         
         <main className="flex-1 p-8 overflow-y-auto">
           <Routes>
-            <Route path="/" element={
-              <div className="space-y-4">
-                <h1 className="text-3xl font-bold text-gray-800">Panel Principal</h1>
-                <p className="text-gray-600">Bienvenido al sistema de gestión.</p>
-              </div>
-            } />
+            <Route path="/" element={<Inicio />} />
             <Route path="/clientes" element={<Clientes />} />
             <Route path="/materiales" element={<Materiales />} />
             <Route path="/presupuestos" element={<Presupuestos />} />

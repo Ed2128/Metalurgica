@@ -1,108 +1,90 @@
 import { useState, useEffect } from 'react';
-import { AlertCircle, TrendingUp, Users, Activity } from 'lucide-react';
+import { Users, Wrench, FileText, DollarSign, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-export default function Inicio() {
-  const [deudores, setDeudores] = useState<any[]>([]);
+export default function Dashboard() {
+  const [metricas, setMetricas] = useState({
+    clientes: 0,
+    materiales: 0,
+    ordenes: 0,
+    saldo: 0
+  });
+  const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    const cargarDeudores = async () => {
+    const cargarMetricas = async () => {
       try {
-        const respuesta = await fetch('http://localhost:3000/api/reportes/deudores');
-        if (respuesta.ok) {
-          const datos = await respuesta.json();
-          setDeudores(datos);
-        }
+        const token = localStorage.getItem('token')?.replace(/^"|"$/g, '') || '';
+        const headers = { 'Authorization': `Bearer ${token}` };
+
+        // 1. Hacemos las 4 peticiones al servidor al mismo tiempo
+        const [resClientes, resMateriales, resOrdenes, resCaja] = await Promise.all([
+          fetch('http://localhost:3000/api/clientes', { headers }),
+          fetch('http://localhost:3000/api/materiales', { headers }),
+          fetch('http://localhost:3000/api/ordenes', { headers }),
+          fetch('http://localhost:3000/api/transacciones', { headers })
+        ]);
+
+        // 2. Extraemos los datos secuencialmente para que TypeScript no arroje errores de tipo
+        const clientes = resClientes.ok ? await resClientes.json() : [];
+        const materiales = resMateriales.ok ? await resMateriales.json() : [];
+        const ordenes = resOrdenes.ok ? await resOrdenes.json() : [];
+        const caja = resCaja.ok ? await resCaja.json() : { saldo_actual: 0 };
+
+        setMetricas({
+          clientes: clientes.length || 0,
+          materiales: materiales.length || 0,
+          ordenes: ordenes.length || 0,
+          saldo: caja.saldo_actual || 0
+        });
       } catch (error) {
-        console.error("Error al cargar el reporte de deudores:", error);
+        console.error("Error al cargar las métricas:", error);
+      } finally {
+        setCargando(false);
       }
     };
-    cargarDeudores();
+
+    cargarMetricas();
   }, []);
 
-  // Calculamos la deuda total sumando los saldos pendientes
-  const deudaTotal = deudores.reduce((sum, cliente) => sum + cliente.saldo_pendiente, 0);
+  const tarjetas = [
+    { titulo: 'Saldo en Caja', valor: `$${metricas.saldo.toLocaleString('es-AR')}`, icono: <DollarSign size={24} />, color: 'bg-green-500', link: '/caja' },
+    { titulo: 'Presupuestos Emitidos', valor: metricas.ordenes, icono: <FileText size={24} />, color: 'bg-blue-500', link: '/presupuestos' },
+    { titulo: 'Clientes Registrados', valor: metricas.clientes, icono: <Users size={24} />, color: 'bg-orange-500', link: '/clientes' },
+    { titulo: 'Materiales en Catálogo', valor: metricas.materiales, icono: <Wrench size={24} />, color: 'bg-gray-700', link: '/materiales' }
+  ];
+
+  if (cargando) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <p className="text-gray-500 animate-pulse">Cargando métricas del sistema...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-        <Activity className="text-blue-600" size={32} />
-        Panel de Control
-      </h1>
-
-      {/* Tarjetas de Resumen Rápido */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4">
-          <div className="p-3 bg-red-100 text-red-600 rounded-lg">
-            <AlertCircle size={28} />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-gray-500">Total a Cobrar</p>
-            <h3 className="text-2xl font-bold text-gray-800">${deudaTotal.toLocaleString('es-AR')}</h3>
-          </div>
-        </div>
-        
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4">
-          <div className="p-3 bg-orange-100 text-orange-600 rounded-lg">
-            <Users size={28} />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-gray-500">Clientes con Deuda</p>
-            <h3 className="text-2xl font-bold text-gray-800">{deudores.length}</h3>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4">
-          <div className="p-3 bg-green-100 text-green-600 rounded-lg">
-            <TrendingUp size={28} />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-gray-500">Estado del Taller</p>
-            <h3 className="text-2xl font-bold text-gray-800">Operativo</h3>
-          </div>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-800">Panel Principal</h1>
+        <p className="text-gray-600">Resumen general del estado del taller.</p>
       </div>
 
-      {/* Tabla de Deudores */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-8">
-        <div className="p-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-          <h3 className="font-semibold text-gray-700 text-lg">Atención Requerida: Saldos Pendientes</h3>
-        </div>
-        
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-white border-b border-gray-200 text-xs text-gray-500 uppercase tracking-wider">
-              <th className="p-4 font-semibold">Cliente</th>
-              <th className="p-4 font-semibold">Contacto</th>
-              <th className="p-4 font-semibold text-right">Total Trabajos</th>
-              <th className="p-4 font-semibold text-right">Pagos a Cuenta</th>
-              <th className="p-4 font-semibold text-right text-red-600">Saldo Deudor</th>
-            </tr>
-          </thead>
-          <tbody>
-            {deudores.map((cliente) => (
-              <tr key={cliente.clienteId} className="border-b border-gray-50 hover:bg-gray-50">
-                <td className="p-4 font-medium text-gray-800">{cliente.nombre}</td>
-                <td className="p-4 text-gray-600">{cliente.contacto || '-'}</td>
-                <td className="p-4 text-right text-gray-600">${Number(cliente.total_trabajos).toLocaleString('es-AR')}</td>
-                <td className="p-4 text-right text-green-600">${Number(cliente.total_pagos).toLocaleString('es-AR')}</td>
-                <td className="p-4 text-right font-bold text-red-600">
-                  ${Number(cliente.saldo_pendiente).toLocaleString('es-AR')}
-                </td>
-              </tr>
-            ))}
-            {deudores.length === 0 && (
-              <tr>
-                <td colSpan={5} className="p-12 text-center">
-                  <div className="flex flex-col items-center justify-center text-gray-500">
-                    <TrendingUp size={48} className="text-green-400 mb-3" />
-                    <p className="text-lg font-medium text-gray-700">¡Todo al día!</p>
-                    <p>No hay clientes con saldos pendientes actualmente.</p>
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {tarjetas.map((t, index) => (
+          <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-4">
+              <div className={`p-3 rounded-lg text-white ${t.color}`}>
+                {t.icono}
+              </div>
+            </div>
+            <h3 className="text-gray-500 text-sm font-medium">{t.titulo}</h3>
+            <p className="text-3xl font-bold text-gray-800 my-1">{t.valor}</p>
+            
+            <Link to={t.link} className="mt-auto pt-4 text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 w-max">
+              Ver detalles <ArrowRight size={16} />
+            </Link>
+          </div>
+        ))}
       </div>
     </div>
   );
