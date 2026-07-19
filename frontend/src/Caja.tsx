@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { DollarSign, ArrowUpCircle, ArrowDownCircle, Wallet, Pencil, Trash2, X } from 'lucide-react';
 import Swal from 'sweetalert2'; // Importamos SweetAlert2
-
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 export default function Caja() {
   const [saldoActual, setSaldoActual] = useState(0);
   const [historial, setHistorial] = useState<any[]>([]);
@@ -17,7 +17,7 @@ export default function Caja() {
       let token = localStorage.getItem('token') || '';
       token = token.replace(/^"|"$/g, '');
 
-      const respuesta = await fetch('http://localhost:3000/api/transacciones', {
+      const respuesta = await fetch(`${API_URL}/transacciones`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -60,21 +60,20 @@ export default function Caja() {
       return;
     }
 
-    const metodo = idEdicion ? 'PUT' : 'POST';
+  const metodo = idEdicion ? 'PUT' : 'POST';
+    // ✅ CORRECTO: Usando comillas invertidas y la variable API_URL
     const url = idEdicion 
-      ? `http://localhost:3000/api/transacciones/${idEdicion}` 
-      : 'http://localhost:3000/api/transacciones';
+      ? `${API_URL}/transacciones/${idEdicion}` 
+      : `${API_URL}/transacciones`;
 
     try {
       const respuesta = await fetch(url, {
         method: metodo,
-        headers: { 'Content-Type': 'application/json' , 'Authorization': `Bearer ${localStorage.getItem('token')?.replace(/^"|"$/g, '')}` },
-        body: JSON.stringify({
-          tipo,
-          monto: Number(monto),
-          categoria,
-          descripcion
-        })
+        headers: { 
+          'Content-Type': 'application/json',
+          // También le agregamos el replace al token por seguridad, igual que en clientes
+          'Authorization': `Bearer ${localStorage.getItem('token')?.replace(/^"|"$/g, '')}`
+        },
       });
 
       if (respuesta.ok) {
@@ -124,8 +123,11 @@ export default function Caja() {
     if (!confirmacion.isConfirmed) return;
 
     try {
-      const respuesta = await fetch(`http://localhost:3000/api/transacciones/${id}`, {
-        method: 'DELETE'
+      const respuesta = await fetch(`${API_URL}/transacciones/${id}`, {
+        method: 'DELETE',
+        headers: { 
+          'Authorization': `Bearer ${localStorage.getItem('token')?.replace(/^"|"$/g, '')}` 
+        }
       });
 
       if (respuesta.ok) {

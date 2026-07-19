@@ -235,8 +235,9 @@ app.post('/api/clientes',verificarToken, async (req, res) => {
   }
 });
 
+
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor backend corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
 
 // Obtener todos los clientes
@@ -371,7 +372,36 @@ app.get('/api/ordenes',verificarToken, async (req, res) => {
     res.status(500).json({ error: 'Hubo un problema al consultar el historial de presupuestos' });
   }
 });
+// Eliminar un presupuesto usando Prisma
+    app.delete('/api/ordenes/:id', verificarToken, async (req, res) => {
+      try {
+        // Prisma es estricto con los tipos, necesitamos que el ID sea número
+        const id = Number(req.params.id);
+        
+        // 1. PRIMERO: Borramos los ítems asociados al presupuesto
+        // ⚠️ ATENCIÓN: Asegúrate de que 'ordenItem' sea el nombre exacto de tu modelo en el schema.prisma
+        // y que 'ordenId' sea el campo de la relación.
+        await prisma.itemOrdenTrabajo.deleteMany({
+          where: { ordenTrabajoId: id }
+        });
 
+        // 2. SEGUNDO: Ahora sí, borramos el presupuesto principal
+        await prisma.ordenTrabajo.delete({
+          where: { id: id }
+        });
+
+        res.json({ mensaje: 'Presupuesto eliminado correctamente' });
+      } catch (error) {
+        console.error("Error al eliminar el presupuesto:", error);
+        
+        // Si Prisma no encuentra el registro, podemos atrapar su error específico
+        if (error instanceof Error && error.message.includes('Record to delete does not exist')) {
+            return res.status(404).json({ mensaje: 'Presupuesto no encontrado' });
+        }
+        
+        res.status(500).json({ mensaje: 'Error interno al intentar eliminar' });
+      }
+    });
 // --- RUTAS DE TRANSACCIONES (CAJA Y COBROS) ---
 
 // 5. Registrar un nuevo movimiento de caja (Ingreso o Egreso)

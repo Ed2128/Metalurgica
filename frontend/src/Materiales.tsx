@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { PackagePlus, Search, Pencil, Trash2, X, Upload } from 'lucide-react';
 import * as XLSX from 'xlsx'; // Importamos la librería
 import Swal from 'sweetalert2';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 export default function Materiales() {
   const [materiales, setMateriales] = useState<any[]>([]);
   const [busqueda, setBusqueda] = useState('');
@@ -24,7 +25,7 @@ export default function Materiales() {
       // Para ver en la consola (F12) si el token realmente está en la variable
       console.log("Intentando enviar Token al servidor:", token.substring(0, 20) + "...");
 
-      const respuesta = await fetch('http://localhost:3000/api/materiales', {
+      const respuesta = await fetch(`${API_URL}/materiales`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -57,13 +58,18 @@ export default function Materiales() {
   const guardarMaterial = async (e: React.FormEvent) => {
     e.preventDefault();
     const metodo = idEdicion ? 'PUT' : 'POST';
-    const url = idEdicion ? `http://localhost:3000/api/materiales/${idEdicion}` : 'http://localhost:3000/api/materiales';
+    // ✅ CORRECTO: Usando comillas invertidas y la variable API_URL
+    const url = idEdicion 
+      ? `${API_URL}/materiales/${idEdicion}` 
+      : `${API_URL}/materiales`;
+
     try {
       const respuesta = await fetch(url, {
         method: metodo,
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          // También le agregamos el replace al token por seguridad, igual que en clientes
+          'Authorization': `Bearer ${localStorage.getItem('token')?.replace(/^"|"$/g, '')}`
         },
         // Aquí hacemos la "traducción" de nombres:
         // nombre_en_bd: nombre_en_react
@@ -129,7 +135,7 @@ export default function Materiales() {
     if (!confirmacion.isConfirmed) return;
 
     try {
-      const respuesta = await fetch(`http://localhost:3000/api/materiales/${id}`, {
+      const respuesta = await fetch(`${API_URL}/materiales/${id}`, {
         method: 'DELETE'
       });
 
@@ -242,7 +248,7 @@ export default function Materiales() {
           return;
         }
 
-        const respuesta = await fetch('http://localhost:3000/api/materiales/bulk', {
+        const respuesta = await fetch('import.meta.env.VITE_API_URL/materiales/bulk', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(materialesFormateados)

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Users, UserPlus, Search, Pencil, Trash2, X } from 'lucide-react';
 import Swal from 'sweetalert2'; // Importamos SweetAlert2
-
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 export default function Clientes() {
   const [clientes, setClientes] = useState<any[]>([]);
   const [busqueda, setBusqueda] = useState('');
@@ -16,7 +16,7 @@ export default function Clientes() {
       let token = localStorage.getItem('token') || '';
       token = token.replace(/^"|"$/g, '');
 
-      const res = await fetch('http://localhost:3000/api/clientes', {
+      const res = await fetch(`${API_URL}/clientes`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -46,17 +46,20 @@ export default function Clientes() {
     e.preventDefault();
     
     const metodo = idEdicion ? 'PUT' : 'POST';
+    // ✅ CORRECTO: Usando comillas invertidas y la variable API_URL
     const url = idEdicion 
-      ? `http://localhost:3000/api/clientes/${idEdicion}` 
-      : 'http://localhost:3000/api/clientes';
+      ? `${API_URL}/clientes/${idEdicion}` 
+      : `${API_URL}/clientes`;
 
     try {
       const respuesta = await fetch(url, {
         method: metodo,
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')?.replace(/^"|"$/g, '')}` },
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${localStorage.getItem('token')?.replace(/^"|"$/g, '')}` 
+        },
         body: JSON.stringify({ nombre, contacto, direccion })
       });
-
       if (respuesta.ok) {
         cargarClientes();
         limpiarFormulario();
@@ -103,7 +106,7 @@ export default function Clientes() {
     if (!confirmacion.isConfirmed) return;
 
     try {
-      const respuesta = await fetch(`http://localhost:3000/api/clientes/${id}`, {
+      const respuesta = await fetch(`${API_URL}/clientes/${id}`, {
         method: 'DELETE',
         headers: { 
           'Authorization': `Bearer ${localStorage.getItem('token')?.replace(/^"|"$/g, '')}` 

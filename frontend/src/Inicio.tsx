@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Users, Wrench, FileText, DollarSign, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 export default function Dashboard() {
   const [metricas, setMetricas] = useState({
     clientes: 0,
@@ -18,13 +18,12 @@ export default function Dashboard() {
         const headers = { 'Authorization': `Bearer ${token}` };
 
         // 1. Hacemos las 4 peticiones al servidor al mismo tiempo
-        const [resClientes, resMateriales, resOrdenes, resCaja] = await Promise.all([
-          fetch('http://localhost:3000/api/clientes', { headers }),
-          fetch('http://localhost:3000/api/materiales', { headers }),
-          fetch('http://localhost:3000/api/ordenes', { headers }),
-          fetch('http://localhost:3000/api/transacciones', { headers })
+       const [resClientes, resMateriales, resOrdenes, resCaja] = await Promise.all([
+             fetch(`${API_URL}/clientes`, { headers }),
+             fetch(`${API_URL}/materiales`, { headers }),
+             fetch(`${API_URL}/ordenes`, { headers }),
+             fetch(`${API_URL}/transacciones`, { headers })
         ]);
-
         // 2. Extraemos los datos secuencialmente para que TypeScript no arroje errores de tipo
         const clientes = resClientes.ok ? await resClientes.json() : [];
         const materiales = resMateriales.ok ? await resMateriales.json() : [];

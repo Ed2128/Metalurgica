@@ -10,15 +10,18 @@ export default function Login({ onLogin }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const manejarAcceso = async (e: React.FormEvent) => {
+ const manejarAcceso = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // ¡OJO AQUÍ! Nada de comillas alrededor de import.meta.env.VITE_API_URL
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
     try {
-      const respuesta = await fetch('http://localhost:3000/api/auth/login', {
+      const respuesta = await fetch(API_URL + '/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-
       const datos = await respuesta.json();
 
       if (respuesta.ok) {

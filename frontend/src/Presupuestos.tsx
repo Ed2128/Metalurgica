@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FileText, Plus, Trash2, Save, Printer, Eye, X, History } from 'lucide-react';
 import Swal from 'sweetalert2';
-
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 export default function Presupuestos() {
   const [pestana, setPestana] = useState<'nuevo' | 'historial'>('nuevo');
   const [clientes, setClientes] = useState<any[]>([]);
@@ -21,8 +21,8 @@ export default function Presupuestos() {
       const headers = { 'Authorization': `Bearer ${token}` };
 
       // 2. Se lo pasamos a ambos fetch
-      const resClientes = await fetch('http://localhost:3000/api/clientes', { headers });
-      const resMateriales = await fetch('http://localhost:3000/api/materiales', { headers });
+      const resClientes = await fetch(`${API_URL}/clientes`, { headers });
+      const resMateriales = await fetch(`${API_URL}/materiales`, { headers });
       
       if (resClientes.ok) setClientes(await resClientes.json());
       if (resMateriales.ok) setMateriales(await resMateriales.json());
@@ -34,7 +34,7 @@ export default function Presupuestos() {
   const cargarHistorial = async () => {
     try {
       const token = localStorage.getItem('token')?.replace(/^"|"$/g, '') || '';
-      const respuesta = await fetch('http://localhost:3000/api/ordenes', { 
+      const respuesta = await fetch(`${API_URL}/ordenes`, { 
         headers: { 'Authorization': `Bearer ${token}` } 
       });
       
@@ -83,7 +83,7 @@ export default function Presupuestos() {
       }));
 
     try {
-      const respuesta = await fetch('http://localhost:3000/api/ordenes', {
+      const respuesta = await fetch(`${API_URL}/ordenes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' , 'Authorization': `Bearer ${localStorage.getItem('token')?.replace(/^"|"$/g, '')}` },
         body: JSON.stringify({
@@ -116,6 +116,48 @@ export default function Presupuestos() {
       }
     } catch (error) {
       console.error(error);
+    }
+  };
+  const eliminarOrden = async (id: number) => {
+    const confirmacion = await Swal.fire({
+      title: '¿Estás seguro?',
+      text: "Se eliminará este presupuesto de forma permanente.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!confirmacion.isConfirmed) return;
+
+    try {
+      const respuesta = await fetch(`${API_URL}/ordenes/${id}`, {
+        method: 'DELETE',
+        headers: { 
+          'Authorization': `Bearer ${localStorage.getItem('token')?.replace(/^"|"$/g, '')}` 
+        }
+      });
+
+      if (respuesta.ok) {
+        cargarHistorial(); // Esto recarga la tabla
+        Swal.fire({
+          title: '¡Eliminado!',
+          text: 'El presupuesto ha sido borrado.',
+          icon: 'success',
+          confirmButtonColor: '#2563eb'
+        });
+      } else {
+        Swal.fire({
+          title: 'Error',
+          text: 'No se pudo eliminar el presupuesto.',
+          icon: 'error',
+          confirmButtonColor: '#2563eb'
+        });
+      }
+    } catch (error) {
+      console.error("Error al eliminar presupuesto:", error);
     }
   };
 
@@ -252,6 +294,13 @@ export default function Presupuestos() {
                   <td className="p-4 text-center">
                     <button onClick={() => setPresupuestoSeleccionado(orden)} className="inline-flex items-center gap-1 text-gray-600 hover:text-blue-600 bg-gray-100 hover:bg-blue-50 py-1.5 px-3 rounded-md text-xs font-medium transition-colors">
                       <Eye size={14} /> Ver / Imprimir
+                    </button>
+                    <button 
+                      onClick={() => eliminarOrden(orden.id)} 
+                      className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 py-1.5 px-3 rounded-md text-xs font-medium transition-colors inline-flex items-center gap-1"
+                      title="Eliminar presupuesto"
+                    >
+                      Eliminar
                     </button>
                   </td>
                 </tr>
