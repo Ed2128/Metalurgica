@@ -76,7 +76,7 @@ export default function Materiales() {
         body: JSON.stringify({ 
           descripcion: descripcion,
           unidad_medida: unidadMedida,
-          precio_final: Number(precioBase),
+          precio_base: Number(precioBase),
           tiene_iva_incluido: tieneIva
         })
       });
