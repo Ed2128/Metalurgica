@@ -248,7 +248,7 @@ export default function Materiales() {
           return;
         }
 
-        const respuesta = await fetch('import.meta.env.VITE_API_URL/materiales/bulk', {
+        const respuesta = await fetch(`${import.meta.env.VITE_API_URL}/materiales/bulk`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(materialesFormateados)
