@@ -136,7 +136,10 @@ export default function Materiales() {
 
     try {
       const respuesta = await fetch(`${API_URL}/materiales/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE' ,
+        headers: {
+    'Authorization': `Bearer ${localStorage.getItem('token')?.replace(/^"|"$/g, '')}`
+  }
       });
 
       if (respuesta.ok) {
