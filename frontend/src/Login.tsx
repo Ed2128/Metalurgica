@@ -53,37 +53,47 @@ export default function Login({ onLogin }: LoginProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full border border-gray-200">
+    <div className="min-h-screen bg-gray-50 sm:bg-gray-100 flex items-center justify-center p-4 sm:p-6">
+      <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg sm:max-w-md w-full border border-gray-100 sm:border-gray-200">
         
-        <div className="flex flex-col items-center mb-8 text-center">
-          <div className="bg-blue-600 p-3 rounded-full text-white mb-3 shadow-sm">
-            <Wrench size={28} />
+        <div className="flex flex-col items-center mb-6 sm:mb-8 text-center">
+          <div className="bg-blue-600 p-3 sm:p-4 rounded-full text-white mb-4 shadow-md">
+            <Wrench className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
-          <h1 className="text-2xl font-extrabold text-gray-800">Taller Metalúrgico</h1>
-          <p className="text-gray-500 text-sm mt-1">Ingresa tus credenciales para acceder</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-800 tracking-tight">
+            Taller Metalúrgico
+          </h1>
+          <p className="text-gray-500 text-sm mt-2">
+            Ingresa tus credenciales para acceder
+          </p>
         </div>
 
-        <form onSubmit={manejarAcceso} className="space-y-5">
+        <form onSubmit={manejarAcceso} className="space-y-4 sm:space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Correo Electrónico
+            </label>
             <input 
               type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-colors" 
+              className="w-full border border-gray-300 rounded-lg p-3 sm:p-2.5 text-base sm:text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-colors" 
               placeholder="admin@metalurgica.com"
             />
           </div>
+          
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Contraseña
+            </label>
             <input 
               type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-colors" 
+              className="w-full border border-gray-300 rounded-lg p-3 sm:p-2.5 text-base sm:text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-colors" 
               placeholder="••••••••"
             />
           </div>
+          
           <button 
             type="submit" 
-            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-colors shadow-md mt-2"
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-base sm:text-sm font-semibold py-3 sm:py-2.5 rounded-lg transition-colors shadow-md mt-4"
           >
             <Lock size={18} /> Iniciar Sesión
           </button>

@@ -143,12 +143,12 @@ export default function Clientes() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-2">
         <Users className="text-blue-600" size={32} />
         Gestión de Clientes
       </h1>
 
-      <div className={`p-6 rounded-xl shadow-sm border transition-colors ${idEdicion ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`}>
+      <div className={`p-4 md:p-6 rounded-xl shadow-sm border transition-colors ${idEdicion ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`}>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
             <UserPlus size={20} />
@@ -156,73 +156,89 @@ export default function Clientes() {
           </h2>
           {idEdicion && (
             <button type="button" onClick={limpiarFormulario} className="text-gray-500 hover:text-red-500 flex items-center gap-1 text-sm">
-              <X size={16} /> Cancelar edición
+              <X size={16} /> <span className="hidden sm:inline">Cancelar edición</span>
             </button>
           )}
         </div>
 
-        <form onSubmit={guardarCliente} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          <div className="md:col-span-1">
+        {/* Formulario en CSS Grid responsivo */}
+        <form onSubmit={guardarCliente} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+          <div className="sm:col-span-2 lg:col-span-1">
             <label className="block text-sm text-gray-600 mb-1">Nombre o Empresa</label>
-            <input type="text" required value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white" placeholder="Ej. Juan Pérez" />
+            <input type="text" required value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full border border-gray-300 rounded-md p-2.5 md:p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white" placeholder="Ej. Juan Pérez" />
           </div>
-          <div className="md:col-span-1">
+          <div className="w-full">
             <label className="block text-sm text-gray-600 mb-1">Teléfono / Contacto</label>
-            <input type="text" value={contacto} onChange={(e) => setContacto(e.target.value)} className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white" placeholder="Ej. 3764-123456" />
+            <input type="text" value={contacto} onChange={(e) => setContacto(e.target.value)} className="w-full border border-gray-300 rounded-md p-2.5 md:p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white" placeholder="Ej. 3764-123456" />
           </div>
-          <div className="md:col-span-1">
+          <div className="w-full">
             <label className="block text-sm text-gray-600 mb-1">Dirección (Opcional)</label>
-            <input type="text" value={direccion} onChange={(e) => setDireccion(e.target.value)} className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white" placeholder="Ej. Av. Uruguay 123" />
+            <input type="text" value={direccion} onChange={(e) => setDireccion(e.target.value)} className="w-full border border-gray-300 rounded-md p-2.5 md:p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white" placeholder="Ej. Av. Uruguay 123" />
           </div>
-          <button type="submit" className={`${idEdicion ? 'bg-orange-500 hover:bg-orange-600' : 'bg-blue-600 hover:bg-blue-700'} text-white font-medium py-2 px-6 rounded-md transition-colors w-full h-[42px]`}>
+          <button type="submit" className={`w-full ${idEdicion ? 'bg-orange-500 hover:bg-orange-600' : 'bg-blue-600 hover:bg-blue-700'} text-white font-medium py-2.5 md:py-2 px-6 rounded-md transition-colors h-auto md:h-[42px]`}>
             {idEdicion ? 'Actualizar' : 'Guardar Cliente'}
           </button>
         </form>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-4 border-b border-gray-200 bg-gray-50">
-          <div className="relative max-w-md">
+      {/* Contenedor de la tabla y buscador */}
+      <div className="bg-transparent md:bg-white md:rounded-xl md:shadow-sm md:border md:border-gray-200 overflow-hidden">
+        <div className="p-0 md:p-4 mb-4 md:mb-0 border-none md:border-b border-gray-200 bg-transparent md:bg-gray-50">
+          <div className="relative w-full md:max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input 
-              type="text" placeholder="Buscar cliente por nombre o teléfono..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              type="text" placeholder="Buscar cliente..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none shadow-sm md:shadow-none"
             />
           </div>
         </div>
 
-        <table className="w-full text-left border-collapse">
-          <thead>
+        {/* Tabla transformada a tarjetas en móvil */}
+        <table className="w-full text-left border-collapse block md:table">
+          <thead className="hidden md:table-header-group">
             <tr className="bg-white border-b border-gray-200 text-sm text-gray-600 uppercase">
-              <th className="p-4 font-semibold">ID</th>
+              <th className="p-4 font-semibold w-16">ID</th>
               <th className="p-4 font-semibold">Nombre</th>
               <th className="p-4 font-semibold">Contacto</th>
               <th className="p-4 font-semibold">Dirección</th>
               <th className="p-4 font-semibold text-center w-24">Acciones</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="block md:table-row-group">
             {clientesFiltrados.map((cli) => (
-              <tr key={cli.id} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="p-4 text-gray-500">#{cli.id}</td>
-                <td className="p-4 font-medium text-gray-800">{cli.nombre}</td>
-                <td className="p-4 text-gray-600">{cli.contacto || '-'}</td>
-                <td className="p-4 text-gray-600">{cli.direccion || '-'}</td>
-                <td className="p-4 text-center">
-                  <div className="flex items-center justify-center gap-3">
-                    <button onClick={() => iniciarEdicion(cli)} className="text-gray-400 hover:text-orange-500 transition-colors" title="Editar">
-                      <Pencil size={18} />
+              <tr key={cli.id} className="block md:table-row border border-gray-200 md:border-b md:border-gray-100 hover:bg-gray-50 bg-white mb-4 rounded-lg shadow-sm md:shadow-none md:mb-0 overflow-hidden">
+                <td className="flex md:table-cell justify-between items-center p-4 border-b border-gray-100 md:border-none text-gray-500">
+                  <span className="md:hidden font-bold text-gray-500 text-xs uppercase">ID</span>
+                  <span>#{cli.id}</span>
+                </td>
+                <td className="flex md:table-cell justify-between items-center p-4 border-b border-gray-100 md:border-none font-medium text-gray-800">
+                  <span className="md:hidden font-bold text-gray-500 text-xs uppercase">Nombre</span>
+                  <span className="text-right md:text-left truncate ml-4 md:ml-0">{cli.nombre}</span>
+                </td>
+                <td className="flex md:table-cell justify-between items-center p-4 border-b border-gray-100 md:border-none text-gray-600">
+                  <span className="md:hidden font-bold text-gray-500 text-xs uppercase">Contacto</span>
+                  <span className="text-right md:text-left">{cli.contacto || '-'}</span>
+                </td>
+                <td className="flex md:table-cell justify-between items-center p-4 border-b border-gray-100 md:border-none text-gray-600">
+                  <span className="md:hidden font-bold text-gray-500 text-xs uppercase">Dirección</span>
+                  <span className="text-right md:text-left truncate max-w-[200px] md:max-w-none">{cli.direccion || '-'}</span>
+                </td>
+                <td className="flex md:table-cell justify-between items-center p-4 text-center bg-gray-50 md:bg-transparent">
+                  <span className="md:hidden font-bold text-gray-500 text-xs uppercase">Acciones</span>
+                  <div className="flex items-center justify-end md:justify-center gap-4 md:gap-3">
+                    <button onClick={() => iniciarEdicion(cli)} className="text-gray-500 hover:text-orange-500 transition-colors p-2 md:p-0 bg-white md:bg-transparent rounded shadow md:shadow-none border md:border-none" title="Editar">
+                      <Pencil size={20} className="md:w-[18px] md:h-[18px]" />
                     </button>
-                    <button onClick={() => eliminarCliente(cli.id)} className="text-gray-400 hover:text-red-500 transition-colors" title="Eliminar">
-                      <Trash2 size={18} />
+                    <button onClick={() => eliminarCliente(cli.id)} className="text-gray-500 hover:text-red-500 transition-colors p-2 md:p-0 bg-white md:bg-transparent rounded shadow md:shadow-none border md:border-none" title="Eliminar">
+                      <Trash2 size={20} className="md:w-[18px] md:h-[18px]" />
                     </button>
                   </div>
                 </td>
               </tr>
             ))}
             {clientesFiltrados.length === 0 && (
-              <tr>
-                <td colSpan={5} className="p-8 text-center text-gray-500">
+              <tr className="block md:table-row bg-white rounded-lg border border-gray-200 md:border-none shadow-sm md:shadow-none">
+                <td colSpan={5} className="p-8 text-center text-gray-500 block md:table-cell">
                   {busqueda ? 'No se encontró ningún cliente con esos datos.' : 'No hay clientes registrados.'}
                 </td>
               </tr>

@@ -183,19 +183,26 @@ export default function Presupuestos() {
     return costoMats + manoDeObra;
   };
   return (
-    <div className="space-y-6 print:p-0">
+    <div className="space-y-4 md:space-y-6 print:p-0">
       
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
-        <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-2">
           <FileText className="text-blue-600" size={32} />
           Módulo de Presupuestos
         </h1>
         
-        <div className="flex bg-gray-200 p-1 rounded-lg">
-          <button onClick={() => setPestana('nuevo')} className={`flex items-center gap-1.5 px-4 py-2 rounded-md font-medium text-sm transition-colors ${pestana === 'nuevo' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-600 hover:text-gray-800'}`}>
-            <Plus size={16} /> Nuevo Presupuesto
+        {/* Pestañas (Tabs) ensanchadas en móvil */}
+        <div className="flex bg-gray-200 p-1 rounded-lg w-full md:w-auto">
+          <button 
+            onClick={() => setPestana('nuevo')} 
+            className={`flex-1 md:flex-none flex justify-center items-center gap-1.5 px-4 py-2.5 md:py-2 rounded-md font-medium text-sm transition-colors ${pestana === 'nuevo' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-600 hover:text-gray-800'}`}
+          >
+            <Plus size={16} /> Nuevo
           </button>
-          <button onClick={() => setPestana('historial')} className={`flex items-center gap-1.5 px-4 py-2 rounded-md font-medium text-sm transition-colors ${pestana === 'historial' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-600 hover:text-gray-800'}`}>
+          <button 
+            onClick={() => setPestana('historial')} 
+            className={`flex-1 md:flex-none flex justify-center items-center gap-1.5 px-4 py-2.5 md:py-2 rounded-md font-medium text-sm transition-colors ${pestana === 'historial' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-600 hover:text-gray-800'}`}
+          >
             <History size={16} /> Historial ({historial.length})
           </button>
         </div>
@@ -203,12 +210,12 @@ export default function Presupuestos() {
 
       {/* NUEVO PRESUPUESTO */}
       {pestana === 'nuevo' && (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 print:hidden">
+        <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 md:border-gray-200 print:hidden">
           <form onSubmit={guardarPresupuesto} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-gray-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 pb-6 border-b border-gray-100">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Seleccionar Cliente</label>
-                <select required value={clienteId} onChange={(e) => setClienteId(e.target.value)} className="w-full border border-gray-300 rounded-md p-2.5 outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <select required value={clienteId} onChange={(e) => setClienteId(e.target.value)} className="w-full border border-gray-300 rounded-md p-3 md:p-2.5 outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                   <option value="">-- Elige un cliente --</option>
                   {clientes.map(cli => (
                     <option key={cli.id} value={cli.id}>{cli.nombre}</option>
@@ -217,52 +224,55 @@ export default function Presupuestos() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Coeficiente de Mano de Obra</label>
-                <input type="number" step="0.1" required value={coeficiente} onChange={(e) => setCoeficiente(Number(e.target.value))} className="w-full border border-gray-300 rounded-md p-2.5 outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+                <input type="number" step="0.1" required value={coeficiente} onChange={(e) => setCoeficiente(Number(e.target.value))} className="w-full border border-gray-300 rounded-md p-3 md:p-2.5 outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
               </div>
             </div>
 
             <div>
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
                 <h3 className="text-lg font-semibold text-gray-700">Materiales a Utilizar</h3>
-                <button type="button" onClick={agregarFila} className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white py-1.5 px-3 rounded text-sm transition-colors">
+                <button type="button" onClick={agregarFila} className="w-full sm:w-auto flex items-center justify-center gap-1 bg-green-600 hover:bg-green-700 text-white py-2 md:py-1.5 px-4 md:px-3 rounded-md text-sm font-medium transition-colors">
                   <Plus size={16} /> Agregar Ítem
                 </button>
               </div>
 
               <div className="space-y-3">
                 {items.length === 0 && (
-                  <p className="text-gray-500 text-sm italic border-2 border-dashed border-gray-200 p-4 text-center rounded-lg">
+                  <p className="text-gray-500 text-sm italic border-2 border-dashed border-gray-200 p-6 text-center rounded-lg">
                     Haz clic en "Agregar Ítem" para listar materiales.
                   </p>
                 )}
 
                 {items.map((item, index) => (
-                  <div key={index} className="flex gap-3 items-end bg-gray-50 p-3 rounded-lg border border-gray-200">
-                    <div className="flex-1">
-                      <label className="block text-xs text-gray-500 mb-1">Material</label>
-                      <select required value={item.materialId} onChange={(e) => actualizarFila(index, 'materialId', e.target.value)} className="w-full border border-gray-300 rounded p-2 text-sm outline-none bg-white">
+                  // Fila adaptable: en móvil se apila el material arriba y la cantidad/botón abajo
+                  <div key={index} className="flex flex-col sm:flex-row gap-3 items-start sm:items-end bg-gray-50 p-4 sm:p-3 rounded-lg border border-gray-200">
+                    <div className="w-full sm:flex-1">
+                      <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Material</label>
+                      <select required value={item.materialId} onChange={(e) => actualizarFila(index, 'materialId', e.target.value)} className="w-full border border-gray-300 rounded p-3 md:p-2 text-sm outline-none bg-white">
                         <option value="">-- Seleccionar --</option>
                         {materiales.map(mat => (
-                          <option key={mat.id} value={mat.id}>
+                          <option key={mat.id} value={mat.id} className="truncate">
                             {mat.descripcion} (Costo: ${Number(mat.precio_final || 0).toLocaleString('es-AR')})
                           </option>
                         ))}
                       </select>
                     </div>
-                    <div className="w-24">
-                      <label className="block text-xs text-gray-500 mb-1">Cantidad</label>
-                      <input type="number" min="1" required value={item.cantidad} onChange={(e) => actualizarFila(index, 'cantidad', Number(e.target.value))} className="w-full border border-gray-300 rounded p-2 text-sm outline-none bg-white" />
+                    <div className="flex gap-2 w-full sm:w-auto items-end">
+                      <div className="flex-1 sm:w-24">
+                        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Cantidad</label>
+                        <input type="number" min="1" required value={item.cantidad} onChange={(e) => actualizarFila(index, 'cantidad', Number(e.target.value))} className="w-full border border-gray-300 rounded p-3 md:p-2 text-sm outline-none bg-white" />
+                      </div>
+                      <button type="button" onClick={() => eliminarFila(index)} className="p-3 md:p-2 text-red-500 hover:bg-red-100 rounded border border-transparent hover:border-red-200 transition-colors h-auto flex-shrink-0">
+                        <Trash2 size={20} />
+                      </button>
                     </div>
-                    <button type="button" onClick={() => eliminarFila(index)} className="p-2 text-red-500 hover:bg-red-100 rounded transition-colors">
-                      <Trash2 size={20} />
-                    </button>
                   </div>
                 ))}
               </div>
             </div>
 
             <div className="pt-4 border-t border-gray-100">
-              <button type="submit" className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-md">
+              <button type="submit" className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-6 rounded-lg transition-colors shadow-md text-lg md:text-base">
                 <Save size={20} /> Guardar Presupuesto
               </button>
             </div>
@@ -272,42 +282,50 @@ export default function Presupuestos() {
 
       {/* HISTORIAL */}
       {pestana === 'historial' && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden print:hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
+        <div className="bg-transparent md:bg-white md:rounded-xl md:shadow-sm md:border md:border-gray-200 overflow-hidden print:hidden">
+          {/* Tabla transformada a tarjetas en móvil */}
+          <table className="w-full text-left border-collapse block md:table">
+            <thead className="hidden md:table-header-group">
               <tr className="bg-gray-50 border-b border-gray-200 text-sm text-gray-600 uppercase">
                 <th className="p-4 font-semibold">Nº Presupuesto</th>
                 <th className="p-4 font-semibold">Fecha</th>
                 <th className="p-4 font-semibold">Cliente</th>
                 <th className="p-4 font-semibold text-right">Total Presupuestado</th>
-                <th className="p-4 font-semibold text-center w-36">Acciones</th>
+                <th className="p-4 font-semibold text-center w-48">Acciones</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="block md:table-row-group">
               {historial.map((orden) => (
-                <tr key={orden.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="p-4 font-bold text-gray-700"># {String(orden.id).padStart(4, '0')}</td>
-                  <td className="p-4 text-gray-600">{new Date(orden.fecha).toLocaleDateString('es-AR')}</td>
-                  <td className="p-4 font-medium text-gray-800">{orden.cliente?.nombre || 'Desconocido'}</td>
-                  {/* Usamos nuestra función segura para el total */}
-                  <td className="p-4 text-right font-bold text-blue-600">${calcularCostoTotal(orden).toLocaleString('es-AR')}</td>
-                  <td className="p-4 text-center">
-                    <button onClick={() => setPresupuestoSeleccionado(orden)} className="inline-flex items-center gap-1 text-gray-600 hover:text-blue-600 bg-gray-100 hover:bg-blue-50 py-1.5 px-3 rounded-md text-xs font-medium transition-colors">
-                      <Eye size={14} /> Ver / Imprimir
+                <tr key={orden.id} className="block md:table-row border border-gray-200 md:border-b md:border-gray-100 bg-white mb-4 rounded-lg shadow-sm md:shadow-none md:mb-0 hover:bg-gray-50 overflow-hidden">
+                  <td className="flex md:table-cell justify-between items-center p-4 border-b border-gray-100 md:border-none font-bold text-gray-700">
+                    <span className="md:hidden font-bold text-gray-500 text-xs uppercase">Nº Presupuesto</span>
+                    <span># {String(orden.id).padStart(4, '0')}</span>
+                  </td>
+                  <td className="flex md:table-cell justify-between items-center p-4 border-b border-gray-100 md:border-none text-gray-600">
+                    <span className="md:hidden font-bold text-gray-500 text-xs uppercase">Fecha</span>
+                    <span>{new Date(orden.fecha).toLocaleDateString('es-AR')}</span>
+                  </td>
+                  <td className="flex md:table-cell justify-between items-center p-4 border-b border-gray-100 md:border-none font-medium text-gray-800">
+                    <span className="md:hidden font-bold text-gray-500 text-xs uppercase">Cliente</span>
+                    <span className="text-right truncate ml-4 md:ml-0">{orden.cliente?.nombre || 'Desconocido'}</span>
+                  </td>
+                  <td className="flex md:table-cell justify-between items-center p-4 border-b border-gray-100 md:border-none text-right font-bold text-blue-600">
+                    <span className="md:hidden font-bold text-gray-500 text-xs uppercase">Total</span>
+                    <span className="text-lg md:text-base">${calcularCostoTotal(orden).toLocaleString('es-AR')}</span>
+                  </td>
+                  <td className="flex md:table-cell justify-end md:justify-center items-center p-4 bg-gray-50 md:bg-transparent gap-2">
+                    <button onClick={() => setPresupuestoSeleccionado(orden)} className="inline-flex items-center justify-center gap-1.5 text-blue-700 bg-blue-100 hover:bg-blue-200 py-2 md:py-1.5 px-3 md:px-3 rounded-md text-sm md:text-xs font-medium transition-colors w-full md:w-auto">
+                      <Eye size={16} className="md:w-3.5 md:h-3.5" /> <span className="md:hidden lg:inline">Ver / Imprimir</span>
                     </button>
-                    <button 
-                      onClick={() => eliminarOrden(orden.id)} 
-                      className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 py-1.5 px-3 rounded-md text-xs font-medium transition-colors inline-flex items-center gap-1"
-                      title="Eliminar presupuesto"
-                    >
-                      Eliminar
+                    <button onClick={() => eliminarOrden(orden.id)} className="text-red-600 bg-red-100 hover:bg-red-200 py-2 md:py-1.5 px-3 md:px-3 rounded-md text-sm md:text-xs font-medium transition-colors inline-flex items-center justify-center gap-1.5 w-full md:w-auto" title="Eliminar presupuesto">
+                      <Trash2 size={16} className="md:w-3.5 md:h-3.5" /> <span className="md:hidden lg:inline">Eliminar</span>
                     </button>
                   </td>
                 </tr>
               ))}
               {historial.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="p-8 text-center text-gray-500">
+                <tr className="block md:table-row bg-white rounded-lg border border-gray-200 md:border-none shadow-sm md:shadow-none">
+                  <td colSpan={5} className="p-8 text-center text-gray-500 block md:table-cell">
                     No hay presupuestos registrados en el historial.
                   </td>
                 </tr>
@@ -319,46 +337,50 @@ export default function Presupuestos() {
 
       {/* HOJA DE IMPRESIÓN MODAL */}
       {presupuestoSeleccionado && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 overflow-y-auto print:static print:bg-white print:p-0">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start md:items-center justify-center z-50 p-2 md:p-4 overflow-y-auto print:static print:bg-white print:p-0">
           
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full flex flex-col max-h-[90vh] print:max-h-none print:shadow-none print:rounded-none">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full flex flex-col mt-4 md:mt-0 max-h-[95vh] md:max-h-[90vh] print:max-h-none print:shadow-none print:rounded-none">
             
-            <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50 print:hidden">
-              <h3 className="font-bold text-gray-800">Vista Previa de Documento</h3>
-              <div className="flex items-center gap-3">
-                <button onClick={() => window.print()} className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-1.5 px-4 rounded-md text-sm transition-colors flex items-center gap-1.5">
-                  <Printer size={16} /> Imprimir / PDF
+            {/* Cabecera del modal */}
+            <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50 print:hidden rounded-t-xl">
+              <h3 className="font-bold text-gray-800 text-sm md:text-base">Vista Previa</h3>
+              <div className="flex items-center gap-2 md:gap-3">
+                <button onClick={() => window.print()} className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 md:py-1.5 px-3 md:px-4 rounded-md text-sm transition-colors flex items-center gap-1.5 shadow-sm">
+                  <Printer size={16} /> <span className="hidden sm:inline">Imprimir / PDF</span>
                 </button>
-                <button onClick={() => setPresupuestoSeleccionado(null)} className="text-gray-400 hover:text-red-500 p-1">
+                <button onClick={() => setPresupuestoSeleccionado(null)} className="bg-gray-200 hover:bg-gray-300 text-gray-600 p-2 rounded-md transition-colors">
                   <X size={20} />
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-8 print:overflow-visible print:p-0">
-              <div className="border border-gray-200 p-8 rounded-lg max-w-[800px] mx-auto print:border-0 print:p-0">
+            {/* Contenido a imprimir */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-8 print:overflow-visible print:p-0">
+              <div className="border border-gray-200 p-4 sm:p-8 rounded-lg max-w-[800px] mx-auto print:border-0 print:p-0">
                 
-                <div className="flex justify-between items-start border-b-2 border-gray-300 pb-6 mb-6">
+                {/* Header Factura */}
+                <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-gray-300 pb-4 md:pb-6 mb-4 md:mb-6 gap-4">
                   <div>
-                    <img src="/logo.png" alt="Logo Taller" onError={(e) => { e.currentTarget.style.display = 'none'; }} className="h-16 mb-2 object-contain" />
-                    <h2 className="text-2xl font-extrabold text-gray-800 uppercase tracking-tight">Taller Metalúrgico</h2>
-                    <p className="text-sm text-gray-500">Trabajos a medida • Estructuras • Herrería en general</p>
+                    <img src="/logo.png" alt="Logo Taller" onError={(e) => { e.currentTarget.style.display = 'none'; }} className="h-12 md:h-16 mb-2 object-contain" />
+                    <h2 className="text-xl md:text-2xl font-extrabold text-gray-800 uppercase tracking-tight">Taller Metalúrgico</h2>
+                    <p className="text-xs md:text-sm text-gray-500">Trabajos a medida • Estructuras • Herrería</p>
                     <p className="text-xs text-gray-400 mt-1">Posadas, Misiones, Argentina</p>
                   </div>
-                  <div className="text-right">
-                    <div className="bg-gray-100 text-gray-800 px-3 py-1.5 rounded-md inline-block font-mono text-sm mb-3">
+                  <div className="text-left sm:text-right w-full sm:w-auto border-t sm:border-0 pt-3 sm:pt-0">
+                    <div className="bg-gray-100 text-gray-800 px-3 py-1.5 rounded-md inline-block font-mono text-xs md:text-sm mb-2 md:mb-3">
                       PRESUPUESTO Nº {String(presupuestoSeleccionado.id).padStart(4, '0')}
                     </div>
                     <p className="text-sm text-gray-600">Fecha: <strong>{new Date(presupuestoSeleccionado.fecha).toLocaleDateString('es-AR')}</strong></p>
                   </div>
                 </div>
 
-                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 mb-6 grid grid-cols-2 gap-4 text-sm">
+                {/* Datos Cliente */}
+                <div className="bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-100 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 text-sm">
                   <div>
                     <span className="text-xs text-gray-400 uppercase font-semibold">Cliente</span>
                     <p className="font-bold text-gray-800 text-base">{presupuestoSeleccionado.cliente?.nombre || 'Consumidor Final'}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="sm:text-right">
                     {presupuestoSeleccionado.cliente?.contacto && (
                       <div>
                         <span className="text-xs text-gray-400 uppercase font-semibold">Teléfono</span>
@@ -368,38 +390,42 @@ export default function Presupuestos() {
                   </div>
                 </div>
 
+                {/* Tabla de Materiales (Permite scroll horizontal en móvil pero se imprime perfecta) */}
                 <div className="mb-6">
-                  <h4 className="font-bold text-gray-700 text-sm uppercase tracking-wider mb-2">Detalle de Materiales e Insumos</h4>
-                  <table className="w-full border-collapse border border-gray-200">
-                    <thead>
-                      <tr className="bg-gray-100 border-b border-gray-200 text-xs font-bold text-gray-600 uppercase text-left">
-                        <th className="p-2.5 border border-gray-200">Material</th>
-                        <th className="p-2.5 border border-gray-200 text-center w-24">Cant.</th>
-                        <th className="p-2.5 border border-gray-200 text-center w-24">Unidad</th>
-                        <th className="p-2.5 border border-gray-200 text-right w-32">Precio Unit.</th>
-                        <th className="p-2.5 border border-gray-200 text-right w-32">Subtotal</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-sm text-gray-700">
-                      {presupuestoSeleccionado.items.map((item: any, idx: number) => {
-                        const precioUnit = Number(item.precio_congelado || item.precio_unitario || item.precio || item.material?.precio_final) || 0;
-                        const subtotal = precioUnit * Number(item.cantidad);
-                        return (
-                          <tr key={idx} className="border-b border-gray-100">
-                            <td className="p-2.5 border border-gray-200 font-medium">{item.material?.descripcion || 'Insumo'}</td>
-                            <td className="p-2.5 border border-gray-200 text-center">{item.cantidad}</td>
-                            <td className="p-2.5 border border-gray-200 text-center">{item.material?.unidad_medida || 'Unidad'}</td>
-                            <td className="p-2.5 border border-gray-200 text-right">${precioUnit.toLocaleString('es-AR')}</td>
-                            <td className="p-2.5 border border-gray-200 text-right font-medium">${subtotal.toLocaleString('es-AR')}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <h4 className="font-bold text-gray-700 text-sm uppercase tracking-wider mb-2">Detalle de Materiales</h4>
+                  <div className="overflow-x-auto border border-gray-200 rounded-lg print:border-none print:overflow-visible">
+                    <table className="w-full min-w-[500px] border-collapse print:border print:border-gray-200">
+                      <thead>
+                        <tr className="bg-gray-100 border-b border-gray-200 text-xs font-bold text-gray-600 uppercase text-left">
+                          <th className="p-2 md:p-2.5 border-r border-gray-200 print:border">Material</th>
+                          <th className="p-2 md:p-2.5 border-r border-gray-200 text-center w-16 md:w-24 print:border">Cant.</th>
+                          <th className="p-2 md:p-2.5 border-r border-gray-200 text-center w-16 md:w-24 print:border">U.</th>
+                          <th className="p-2 md:p-2.5 border-r border-gray-200 text-right w-24 md:w-32 print:border">Precio U.</th>
+                          <th className="p-2 md:p-2.5 text-right w-24 md:w-32 print:border">Subtotal</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-xs md:text-sm text-gray-700">
+                        {presupuestoSeleccionado.items.map((item: any, idx: number) => {
+                          const precioUnit = Number(item.precio_congelado || item.precio_unitario || item.precio || item.material?.precio_final) || 0;
+                          const subtotal = precioUnit * Number(item.cantidad);
+                          return (
+                            <tr key={idx} className="border-b border-gray-100 last:border-0 print:border">
+                              <td className="p-2 md:p-2.5 border-r border-gray-200 font-medium print:border">{item.material?.descripcion || 'Insumo'}</td>
+                              <td className="p-2 md:p-2.5 border-r border-gray-200 text-center print:border">{item.cantidad}</td>
+                              <td className="p-2 md:p-2.5 border-r border-gray-200 text-center print:border">{item.material?.unidad_medida?.substring(0,3) || 'Un'}</td>
+                              <td className="p-2 md:p-2.5 border-r border-gray-200 text-right print:border">${precioUnit.toLocaleString('es-AR')}</td>
+                              <td className="p-2 md:p-2.5 text-right font-medium print:border">${subtotal.toLocaleString('es-AR')}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
+                {/* Resumen Totales */}
                 <div className="flex justify-end mt-4">
-                  <div className="w-80 text-sm space-y-2.5 border-t-2 border-gray-200 pt-4">
+                  <div className="w-full sm:w-80 text-sm space-y-2.5 border-t-2 border-gray-200 pt-4">
                     <div className="flex justify-between text-gray-600">
                       <span>Costo de Materiales:</span>
                       <span>${calcularCostoMateriales(presupuestoSeleccionado).toLocaleString('es-AR')}</span>
@@ -408,14 +434,14 @@ export default function Presupuestos() {
                       <span>Mano de Obra y Gastos:</span>
                       <span>${(calcularCostoTotal(presupuestoSeleccionado) - calcularCostoMateriales(presupuestoSeleccionado)).toLocaleString('es-AR')}</span>
                     </div>
-                    <div className="flex justify-between font-extrabold text-lg text-blue-600 border-t border-gray-200 pt-2 bg-blue-50 px-3 py-1.5 rounded-md">
+                    <div className="flex justify-between font-extrabold text-lg text-blue-600 border-t border-gray-200 pt-2 bg-blue-50 px-3 py-1.5 rounded-md mt-1">
                       <span>TOTAL NETO:</span>
                       <span>${calcularCostoTotal(presupuestoSeleccionado).toLocaleString('es-AR')}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-12 pt-8 border-t border-dashed border-gray-200 text-xs text-gray-500 space-y-4">
+                <div className="mt-8 md:mt-12 pt-6 md:pt-8 border-t border-dashed border-gray-200 text-[10px] md:text-xs text-gray-500 space-y-4">
                   <p className="italic text-center">** Validez del presupuesto: 7 días debido a la volatilidad de precios en metales. **</p>
                 </div>
 
