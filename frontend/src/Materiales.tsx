@@ -294,20 +294,20 @@ export default function Materiales() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-2">
         <PackagePlus className="text-blue-600" size={32} />
         Catálogo de Materiales
       </h1>
 
-      <div className={`p-6 rounded-xl shadow-sm border transition-colors ${idEdicion ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`}>
-        <div className="flex justify-between items-center mb-4">
+      <div className={`p-4 md:p-6 rounded-xl shadow-sm border transition-colors ${idEdicion ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`}>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
           <h2 className="text-lg font-semibold text-gray-700">
             {idEdicion ? 'Editando Material' : 'Agregar Nuevo Insumo'}
           </h2>
           
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
             {idEdicion && (
-              <button type="button" onClick={limpiarFormulario} className="text-gray-500 hover:text-red-500 flex items-center gap-1 text-sm mr-4">
+              <button type="button" onClick={limpiarFormulario} className="text-gray-500 hover:text-red-500 flex items-center gap-1 text-sm">
                 <X size={16} /> Cancelar edición
               </button>
             )}
@@ -323,7 +323,7 @@ export default function Materiales() {
             <button 
               type="button" 
               onClick={() => archivoInputRef.current?.click()}
-              className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-1.5 px-4 rounded-md transition-colors flex items-center gap-2"
+              className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 md:py-1.5 px-4 rounded-md transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
             >
               <Upload size={16} />
               Importar Excel
@@ -331,12 +331,13 @@ export default function Materiales() {
           </div>
         </div>
 
-        <form onSubmit={guardarMaterial} className="flex flex-wrap gap-4 items-end">
-          <div className="flex-1 min-w-[200px]">
+        {/* Formulario transformado en CSS Grid responsivo */}
+        <form onSubmit={guardarMaterial} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
+          <div className="sm:col-span-2 lg:col-span-2">
             <label className="block text-sm text-gray-600 mb-1">Descripción</label>
             <input type="text" required value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white" placeholder="Ej. Caño Estructural 40x40" />
           </div>
-          <div className="w-32">
+          <div className="w-full">
             <label className="block text-sm text-gray-600 mb-1">Unidad</label>
             <select value={unidadMedida} onChange={(e) => setUnidadMedida(e.target.value)} className="w-full border border-gray-300 rounded-md p-2 outline-none bg-white">
               <option value="Barra">Barra</option>
@@ -345,34 +346,35 @@ export default function Materiales() {
               <option value="Kg">Kg</option>
             </select>
           </div>
-          <div className="w-40">
+          <div className="w-full">
             <label className="block text-sm text-gray-600 mb-1">Precio Base ($)</label>
             <input type="number" required value={precioBase} onChange={(e) => setPrecioBase(e.target.value)} className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white" placeholder="0.00" />
           </div>
-          <div className="flex items-center gap-2 mb-2">
-            <input type="checkbox" id="iva" checked={tieneIva} onChange={(e) => setTieneIva(e.target.checked)} className="w-4 h-4 text-blue-600 rounded border-gray-300" />
+          <div className="flex items-center gap-2 mb-2 lg:mb-3">
+            <input type="checkbox" id="iva" checked={tieneIva} onChange={(e) => setTieneIva(e.target.checked)} className="w-5 h-5 md:w-4 md:h-4 text-blue-600 rounded border-gray-300" />
             <label htmlFor="iva" className="text-sm text-gray-600 cursor-pointer">¿IVA y Tasas?</label>
           </div>
-          <button type="submit" className={`${idEdicion ? 'bg-orange-500 hover:bg-orange-600' : 'bg-blue-600 hover:bg-blue-700'} text-white font-medium py-2 px-6 rounded-md transition-colors`}>
+          <button type="submit" className={`w-full sm:col-span-2 lg:col-span-1 ${idEdicion ? 'bg-orange-500 hover:bg-orange-600' : 'bg-blue-600 hover:bg-blue-700'} text-white font-medium py-2 px-6 rounded-md transition-colors`}>
             {idEdicion ? 'Actualizar' : 'Guardar'}
           </button>
         </form>
       </div>
 
       {/* Tabla con Buscador */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-4 border-b border-gray-200 bg-gray-50">
-          <div className="relative max-w-md">
+      <div className="bg-transparent md:bg-white md:rounded-xl md:shadow-sm md:border md:border-gray-200 overflow-hidden">
+        <div className="p-0 md:p-4 mb-4 md:mb-0 border-none md:border-b border-gray-200 bg-transparent md:bg-gray-50">
+          <div className="relative w-full md:max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input 
               type="text" placeholder="Buscar material por descripción..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full pl-10 pr-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none shadow-sm md:shadow-none"
             />
           </div>
         </div>
 
-        <table className="w-full text-left border-collapse">
-          <thead>
+        {/* Magia de Tailwind: block en celular, table en PC */}
+        <table className="w-full text-left border-collapse block md:table">
+          <thead className="hidden md:table-header-group">
             <tr className="bg-white border-b border-gray-200 text-sm text-gray-600 uppercase">
               <th className="p-4 font-semibold">Descripción</th>
               <th className="p-4 font-semibold">Unidad</th>
@@ -381,28 +383,41 @@ export default function Materiales() {
               <th className="p-4 font-semibold text-center w-24">Acciones</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="block md:table-row-group">
             {materialesFiltrados.map((mat) => (
-              <tr key={mat.id} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="p-4 font-medium text-gray-800">{mat.descripcion}</td>
-                <td className="p-4 text-gray-600">{mat.unidad_medida}</td>
-                <td className="p-4 text-right text-gray-600">${Number(mat.precio_base).toLocaleString('es-AR')}</td>
-                <td className="p-4 text-right font-bold text-blue-600">${Number(mat.precio_final).toLocaleString('es-AR')}</td>
-                <td className="p-4 text-center">
-                  <div className="flex items-center justify-center gap-3">
-                    <button onClick={() => iniciarEdicion(mat)} className="text-gray-400 hover:text-orange-500 transition-colors" title="Editar">
-                      <Pencil size={18} />
+              <tr key={mat.id} className="block md:table-row border border-gray-200 md:border-b md:border-gray-100 hover:bg-gray-50 bg-white mb-4 rounded-lg shadow-sm md:shadow-none md:mb-0 overflow-hidden">
+                <td className="flex md:table-cell justify-between items-center p-4 md:p-4 border-b border-gray-100 md:border-none font-medium text-gray-800">
+                  <span className="md:hidden font-bold text-gray-500 text-xs uppercase">Descripción</span>
+                  <span className="text-right md:text-left truncate ml-4 md:ml-0">{mat.descripcion}</span>
+                </td>
+                <td className="flex md:table-cell justify-between items-center p-4 md:p-4 border-b border-gray-100 md:border-none text-gray-600">
+                  <span className="md:hidden font-bold text-gray-500 text-xs uppercase">Unidad</span>
+                  <span>{mat.unidad_medida}</span>
+                </td>
+                <td className="flex md:table-cell justify-between items-center p-4 md:p-4 border-b border-gray-100 md:border-none text-gray-600 md:text-right">
+                  <span className="md:hidden font-bold text-gray-500 text-xs uppercase">Precio Costo</span>
+                  <span>${Number(mat.precio_base).toLocaleString('es-AR')}</span>
+                </td>
+                <td className="flex md:table-cell justify-between items-center p-4 md:p-4 border-b border-gray-100 md:border-none font-bold text-blue-600 md:text-right">
+                  <span className="md:hidden font-bold text-gray-500 text-xs uppercase">Precio Final</span>
+                  <span>${Number(mat.precio_final).toLocaleString('es-AR')}</span>
+                </td>
+                <td className="flex md:table-cell justify-between items-center p-4 md:p-4 text-center bg-gray-50 md:bg-transparent">
+                  <span className="md:hidden font-bold text-gray-500 text-xs uppercase">Acciones</span>
+                  <div className="flex items-center justify-end md:justify-center gap-4 md:gap-3">
+                    <button onClick={() => iniciarEdicion(mat)} className="text-gray-500 hover:text-orange-500 transition-colors p-2 md:p-0 bg-white md:bg-transparent rounded shadow md:shadow-none border md:border-none" title="Editar">
+                      <Pencil size={20} className="md:w-[18px] md:h-[18px]" />
                     </button>
-                    <button onClick={() => eliminarMaterial(mat.id)} className="text-gray-400 hover:text-red-500 transition-colors" title="Eliminar">
-                      <Trash2 size={18} />
+                    <button onClick={() => eliminarMaterial(mat.id)} className="text-gray-500 hover:text-red-500 transition-colors p-2 md:p-0 bg-white md:bg-transparent rounded shadow md:shadow-none border md:border-none" title="Eliminar">
+                      <Trash2 size={20} className="md:w-[18px] md:h-[18px]" />
                     </button>
                   </div>
                 </td>
               </tr>
             ))}
             {materialesFiltrados.length === 0 && (
-              <tr>
-                <td colSpan={5} className="p-8 text-center text-gray-500">
+              <tr className="block md:table-row bg-white rounded-lg border border-gray-200 md:border-none shadow-sm md:shadow-none">
+                <td colSpan={5} className="p-8 text-center text-gray-500 block md:table-cell">
                   {busqueda ? 'No se encontraron resultados.' : 'No hay materiales registrados.'}
                 </td>
               </tr>
