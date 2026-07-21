@@ -60,8 +60,7 @@ export default function Caja() {
       return;
     }
 
-  const metodo = idEdicion ? 'PUT' : 'POST';
-    // ✅ CORRECTO: Usando comillas invertidas y la variable API_URL
+    const metodo = idEdicion ? 'PUT' : 'POST';
     const url = idEdicion 
       ? `${API_URL}/transacciones/${idEdicion}` 
       : `${API_URL}/transacciones`;
@@ -71,9 +70,15 @@ export default function Caja() {
         method: metodo,
         headers: { 
           'Content-Type': 'application/json',
-          // También le agregamos el replace al token por seguridad, igual que en clientes
           'Authorization': `Bearer ${localStorage.getItem('token')?.replace(/^"|"$/g, '')}`
         },
+        // ✅ AHORA SÍ: Enviamos los datos al servidor
+        body: JSON.stringify({
+          tipo: tipo,
+          monto: Number(monto), // Transformamos el texto a número para Prisma
+          categoria: categoria,
+          descripcion: descripcion
+        })
       });
 
       if (respuesta.ok) {
@@ -91,7 +96,7 @@ export default function Caja() {
           title: 'Error',
           text: 'No se pudo guardar la transacción en el servidor.',
           icon: 'error',
-          confirmButtonColor: '#2563eb'
+          confirmButtonColor: '#ef4444' // Cambié a rojo (opcional)
         });
       }
     } catch (error) {
