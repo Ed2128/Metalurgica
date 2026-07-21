@@ -6,7 +6,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // ¡Nada de url aquí!
+  // Nada de URL acá porque no es necesario con prisma 7
 }
 
 model Material {
