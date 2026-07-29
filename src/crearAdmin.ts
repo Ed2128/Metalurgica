@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 // Importamos el Prisma que ya configuraste para tu backend
-import { prisma } from './prisma'; // (Si lo exportaste por defecto, quita las llaves { })
+import { prisma } from './prisma.js'; // (Si lo exportaste por defecto, quita las llaves { })
 
 async function main() {
   console.log("Conectando a Neon...");
