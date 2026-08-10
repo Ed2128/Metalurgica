@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { DollarSign, ArrowUpCircle, ArrowDownCircle, Wallet, Pencil, Trash2, X } from 'lucide-react';
-import Swal from 'sweetalert2'; // Importamos SweetAlert2
+import Swal from 'sweetalert2';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
 export default function Caja() {
   const [saldoActual, setSaldoActual] = useState(0);
   const [historial, setHistorial] = useState<any[]>([]);
@@ -11,6 +13,10 @@ export default function Caja() {
   const [monto, setMonto] = useState('');
   const [categoria, setCategoria] = useState('Adelanto de Cliente');
   const [descripcion, setDescripcion] = useState('');
+  
+  // NUEVOS ESTADOS PARA PAGOS PENDIENTES
+  const [esPendiente, setEsPendiente] = useState(false);
+  const [cliente, setCliente] = useState('');
 
   const cargarCaja = async () => {
     try {
@@ -27,7 +33,7 @@ export default function Caja() {
         setHistorial(datos.historial);
       } else {
         setSaldoActual(0);
-        setHistorial([]); // Evita el pantallazo blanco
+        setHistorial([]);
       }
     } catch (error) {
       console.error("Error al cargar la caja:", error);
@@ -45,6 +51,8 @@ export default function Caja() {
     setMonto('');
     setCategoria('Adelanto de Cliente');
     setDescripcion('');
+    setEsPendiente(false);
+    setCliente('');
   };
 
   const registrarMovimiento = async (e: React.FormEvent) => {
@@ -54,6 +62,16 @@ export default function Caja() {
       Swal.fire({
         title: 'Monto inválido',
         text: 'El monto ingresado debe ser mayor a $0.',
+        icon: 'warning',
+        confirmButtonColor: '#2563eb'
+      });
+      return;
+    }
+
+    if (esPendiente && !cliente.trim()) {
+      Swal.fire({
+        title: 'Falta el cliente',
+        text: 'Para registrar un pago pendiente debes indicar el nombre del cliente.',
         icon: 'warning',
         confirmButtonColor: '#2563eb'
       });
@@ -72,12 +90,14 @@ export default function Caja() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')?.replace(/^"|"$/g, '')}`
         },
-        // ✅ AHORA SÍ: Enviamos los datos al servidor
         body: JSON.stringify({
           tipo: tipo,
-          monto: Number(monto), // Transformamos el texto a número para Prisma
+          monto: Number(monto),
           categoria: categoria,
-          descripcion: descripcion
+          descripcion: descripcion,
+          // NUEVOS CAMPOS ENVIADOS AL BACKEND
+          estado: esPendiente ? 'PENDIENTE' : 'COMPLETADO',
+          cliente: esPendiente ? cliente : null
         })
       });
 
@@ -87,7 +107,7 @@ export default function Caja() {
         
         Swal.fire({
           title: idEdicion ? '¡Movimiento Actualizado!' : '¡Movimiento Registrado!',
-          text: idEdicion ? 'La caja se ha recalculado.' : 'El movimiento impactó en el saldo actual.',
+          text: idEdicion ? 'La caja se ha recalculado.' : (esPendiente ? 'Registrado como pendiente de cobro.' : 'El movimiento impactó en el saldo actual.'),
           icon: 'success',
           confirmButtonColor: '#2563eb'
         });
@@ -96,7 +116,7 @@ export default function Caja() {
           title: 'Error',
           text: 'No se pudo guardar la transacción en el servidor.',
           icon: 'error',
-          confirmButtonColor: '#ef4444' // Cambié a rojo (opcional)
+          confirmButtonColor: '#ef4444'
         });
       }
     } catch (error) {
@@ -110,6 +130,8 @@ export default function Caja() {
     setMonto(mov.monto.toString());
     setCategoria(mov.categoria);
     setDescripcion(mov.descripcion || '');
+    setEsPendiente(mov.estado === 'PENDIENTE');
+    setCliente(mov.cliente || '');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -157,7 +179,7 @@ export default function Caja() {
   };
 
   return (
-<div className="space-y-4 md:space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-2">
         <DollarSign className="text-blue-600" size={32} />
         Caja Diaria y Movimientos
@@ -221,6 +243,33 @@ export default function Caja() {
                 <textarea rows={2} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="w-full border border-gray-300 rounded-md p-3 md:p-2 focus:ring-2 focus:ring-blue-500 outline-none resize-none bg-white" placeholder="Anotaciones extra..." />
               </div>
 
+              {/* NUEVA SECCIÓN: COBRO PENDIENTE (Adaptada a tu diseño) */}
+              <div className="p-4 bg-gray-50 border border-gray-200 rounded-md space-y-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={esPendiente} 
+                    onChange={(e) => setEsPendiente(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">¿Es un trabajo pendiente de cobro?</span>
+                </label>
+
+                {esPendiente && (
+                  <div className="pt-2 animate-fade-in">
+                    <label className="block text-sm text-gray-600 mb-1">Nombre del Cliente</label>
+                    <input 
+                      type="text" 
+                      required={esPendiente} 
+                      value={cliente} 
+                      onChange={(e) => setCliente(e.target.value)} 
+                      className="w-full border border-gray-300 rounded-md p-3 md:p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white" 
+                      placeholder="Ej: Juan Pérez" 
+                    />
+                  </div>
+                )}
+              </div>
+
               <button type="submit" className={`w-full text-white font-medium py-3 md:py-2.5 rounded-md transition-colors ${idEdicion ? 'bg-orange-500 hover:bg-orange-600' : 'bg-gray-800 hover:bg-gray-900'}`}>
                 {idEdicion ? 'Actualizar Movimiento' : 'Guardar Movimiento'}
               </button>
@@ -236,7 +285,6 @@ export default function Caja() {
             </div>
             
             <div className="overflow-y-auto flex-1 p-0">
-              {/* Tabla transformada a tarjetas en móvil */}
               <table className="w-full text-left border-collapse block md:table">
                 <thead className="hidden md:table-header-group">
                   <tr className="bg-white border-b border-gray-200 text-xs text-gray-500 uppercase">
@@ -263,12 +311,18 @@ export default function Caja() {
                             {mov.tipo === 'Ingreso' ? <ArrowUpCircle className="text-green-500" size={18}/> : <ArrowDownCircle className="text-red-500" size={18}/>}
                           </div>
                           <div>
-                            <p className="font-medium text-gray-800 flex items-center justify-end md:justify-start gap-1">
-                              {/* Ícono visible en móvil al lado del texto */}
+                            <p className="font-medium text-gray-800 flex flex-wrap items-center justify-end md:justify-start gap-1">
                               <span className="md:hidden">
                                 {mov.tipo === 'Ingreso' ? <ArrowUpCircle className="text-green-500" size={14}/> : <ArrowDownCircle className="text-red-500" size={14}/>}
                               </span>
                               {mov.categoria}
+                              
+                              {/* BADGE DE ESTADO PENDIENTE */}
+                              {mov.estado === 'PENDIENTE' && (
+                                <span className="text-[10px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full ml-1 uppercase font-bold tracking-wider border border-yellow-200">
+                                  Pendiente: {mov.cliente}
+                                </span>
+                              )}
                             </p>
                             {mov.descripcion && <p className="text-xs text-gray-500">{mov.descripcion}</p>}
                           </div>
