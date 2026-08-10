@@ -407,40 +407,24 @@ app.get('/api/ordenes',verificarToken, async (req, res) => {
 // 5. Registrar un nuevo movimiento de caja (Ingreso o Egreso)
 app.post('/api/transacciones', verificarToken, async (req, res) => {
   try {
-    const { 
-      tipo, 
-      monto, 
-      categoria, 
-      descripcion, 
-      clienteId, 
-      proveedorId, 
-      ordenTrabajoId,
-      estado,     // ✅ CAPTURAMOS EL ESTADO (PENDIENTE O COMPLETADO)
-      cliente     // ✅ CAPTURAMOS EL NOMBRE DEL CLIENTE (TEXTO LIBRE)
-    } = req.body;
+    const { tipo, monto, categoria, descripcion, clienteId, proveedorId, ordenTrabajoId, estado, cliente } = req.body;
 
     if (!tipo || !monto || !categoria) {
-      return res.status(400).json({ error: "Faltan campos obligatorios: tipo, monto o categoria." });
+      return res.status(400).json({ error: "Faltan campos obligatorios" });
     }
 
     const nuevaTransaccion = await prisma.transaccion.create({
       data: {
-        tipo,
-        monto,
-        categoria,
-        descripcion,
-        clienteId,
-        proveedorId,
-        ordenTrabajoId,
+        tipo, monto, categoria, descripcion, clienteId, proveedorId, ordenTrabajoId,
         estado: estado || "COMPLETADO", 
-        cliente: cliente || null        
+        nombreCliente: cliente || null  // ✅ GUARDAMOS EN LA COLUMNA CORRECTA
       }
     });
 
     res.status(201).json(nuevaTransaccion);
   } catch (error) {
     console.error("Error al registrar transacción:", error);
-    res.status(500).json({ error: 'Hubo un problema al guardar el movimiento de caja' });
+    res.status(500).json({ error: 'Hubo un problema al guardar el movimiento' });
   }
 });
 
@@ -453,12 +437,9 @@ app.put('/api/transacciones/:id', verificarToken, async (req, res) => {
     const transaccionActualizada = await prisma.transaccion.update({
       where: { id: Number(id) },
       data: { 
-        tipo, 
-        monto, 
-        categoria, 
-        descripcion,
-        estado: estado || "COMPLETADO", // ✅ ACTUALIZAMOS EL ESTADO
-        cliente: cliente || null
+        tipo, monto, categoria, descripcion,
+        estado: estado || "COMPLETADO",
+        nombreCliente: cliente || null // ✅ GUARDAMOS EN LA COLUMNA CORRECTA
       }
     });
     res.json(transaccionActualizada);
@@ -491,24 +472,22 @@ app.get('/api/transacciones', verificarToken, async (req, res) => {
 
     let saldo_actual = 0;
     
-    // ✅ FORMATEAMOS EL HISTORIAL Y CALCULAMOS EL SALDO CORRECTO
     const historialFormateado = transacciones.map((t: any) => {
-      
-      // LÓGICA DEL SALDO: Solo sumamos/restamos si está COMPLETADO
+      // Ignorar pagos pendientes en el cálculo
       if (t.estado !== 'PENDIENTE') {
         if (t.tipo === 'Ingreso') saldo_actual += t.monto;
         if (t.tipo === 'Egreso') saldo_actual -= t.monto;
       }
 
-      // RED DE SEGURIDAD: Extraer el nombre del cliente sea objeto relacional o texto libre
-      let nombreCliente = t.cliente; 
+      // ✅ LECTURA SEGURA: Usamos el texto libre, y si no hay, buscamos en la relación oficial
+      let nombreC = t.nombreCliente; 
       if (typeof t.cliente === 'object' && t.cliente !== null) {
-        nombreCliente = t.cliente.nombre; 
+        nombreC = t.cliente.nombre; 
       }
 
       return {
         ...t,
-        cliente: nombreCliente
+        cliente: nombreC
       };
     });
 
@@ -519,6 +498,64 @@ app.get('/api/transacciones', verificarToken, async (req, res) => {
   } catch (error) {
     console.error("Error al obtener la caja:", error);
     res.status(500).json({ error: 'Hubo un problema al consultar el historial' });
+  }
+});
+
+// 7. Obtener el Resumen Semanal Agrupado
+app.get('/api/resumen-semanal', verificarToken, async (req, res) => {
+  try {
+    const hace7Dias = new Date();
+    hace7Dias.setDate(hace7Dias.getDate() - 7);
+
+    const transaccionesSemana = await prisma.transaccion.findMany({
+      where: { fecha: { gte: hace7Dias } },
+      orderBy: { fecha: 'desc' },
+      include: { cliente: { select: { nombre: true } } } // Incluimos la relación por las dudas
+    });
+
+    const pendientesDeCobro: any[] = [];
+    const historialAgrupado: any = {};
+
+    transaccionesSemana.forEach((t: any) => {
+      // ✅ LECTURA SEGURA DE NOMBRES
+      const nombreCli = t.nombreCliente || (t.cliente && t.cliente.nombre ? t.cliente.nombre : 'Sin nombre');
+
+      if (t.estado === 'PENDIENTE') {
+        pendientesDeCobro.push({
+          id: t.id,
+          cliente: nombreCli,
+          monto: t.monto,
+          descripcion: t.descripcion || t.categoria,
+          fecha: t.fecha
+        });
+        return; 
+      }
+
+      const fechaStr = new Date(t.fecha).toISOString().split('T')[0];
+
+      if (!historialAgrupado[fechaStr]) {
+        historialAgrupado[fechaStr] = {};
+      }
+
+      if (!historialAgrupado[fechaStr][t.categoria]) {
+        historialAgrupado[fechaStr][t.categoria] = [];
+      }
+
+      historialAgrupado[fechaStr][t.categoria].push({
+        id: t.id,
+        tipo: t.tipo,
+        monto: t.monto,
+        descripcion: t.descripcion
+      });
+    });
+
+    res.json({
+      pendientesDeCobro,
+      historialAgrupado
+    });
+  } catch (error) {
+    console.error("Error al obtener resumen semanal:", error);
+    res.status(500).json({ error: 'Hubo un problema al generar el resumen' });
   }
 });
 

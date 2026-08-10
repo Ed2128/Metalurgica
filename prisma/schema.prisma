@@ -78,6 +78,7 @@ model Transaccion {
   ordenTrabajoId Int?
 
   estado         String   @default("COMPLETADO") // Puede ser "COMPLETADO" o "PENDIENTE"
+  nombreCliente  String?  // NUEVO: Texto libre para cobros rápidos pendientes
   cliente        Cliente?      @relation(fields: [clienteId], references: [id])
   proveedor      Proveedor?    @relation(fields: [proveedorId], references: [id])
   ordenTrabajo   OrdenTrabajo? @relation(fields: [ordenTrabajoId], references: [id])
