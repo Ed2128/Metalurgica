@@ -405,28 +405,24 @@ app.get('/api/ordenes',verificarToken, async (req, res) => {
 // --- RUTAS DE TRANSACCIONES (CAJA Y COBROS) ---
 
 // 5. Registrar un nuevo movimiento de caja (Ingreso o Egreso)
-app.post('/api/transacciones',verificarToken, async (req, res) => {
+app.post('/api/transacciones', verificarToken, async (req, res) => {
   try {
     const { 
-      tipo,         // Obligatorio: "Ingreso" o "Egreso"
-      monto,        // Obligatorio: Número positivo
-      categoria,    // Obligatorio: "Retiro Dueño", "Pago Cliente", "Compra Insumos", etc.
-      descripcion,  // Opcional
-      clienteId,    // Opcional (Si es un cobro a un cliente)
-      proveedorId,  // Opcional (Si es un pago a un proveedor)
-      ordenTrabajoId// Opcional (Si el pago corresponde a un presupuesto específico)
+      tipo, 
+      monto, 
+      categoria, 
+      descripcion, 
+      clienteId, 
+      proveedorId, 
+      ordenTrabajoId,
+      estado,     // ✅ CAPTURAMOS EL ESTADO (PENDIENTE O COMPLETADO)
+      cliente     // ✅ CAPTURAMOS EL NOMBRE DEL CLIENTE (TEXTO LIBRE)
     } = req.body;
 
-    // Validación de seguridad básica
     if (!tipo || !monto || !categoria) {
       return res.status(400).json({ error: "Faltan campos obligatorios: tipo, monto o categoria." });
     }
 
-    if (tipo !== "Ingreso" && tipo !== "Egreso") {
-      return res.status(400).json({ error: "El tipo debe ser estrictamente 'Ingreso' o 'Egreso'." });
-    }
-
-    // Registramos el movimiento en la base de datos
     const nuevaTransaccion = await prisma.transaccion.create({
       data: {
         tipo,
@@ -435,7 +431,9 @@ app.post('/api/transacciones',verificarToken, async (req, res) => {
         descripcion,
         clienteId,
         proveedorId,
-        ordenTrabajoId
+        ordenTrabajoId,
+        estado: estado || "COMPLETADO", 
+        cliente: cliente || null        
       }
     });
 
@@ -445,15 +443,23 @@ app.post('/api/transacciones',verificarToken, async (req, res) => {
     res.status(500).json({ error: 'Hubo un problema al guardar el movimiento de caja' });
   }
 });
+
 // 5.1. Actualizar (Editar) un movimiento de caja
-app.put('/api/transacciones/:id',verificarToken, async (req, res) => {
+app.put('/api/transacciones/:id', verificarToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { tipo, monto, categoria, descripcion } = req.body;
+    const { tipo, monto, categoria, descripcion, estado, cliente } = req.body;
 
     const transaccionActualizada = await prisma.transaccion.update({
       where: { id: Number(id) },
-      data: { tipo, monto, categoria, descripcion }
+      data: { 
+        tipo, 
+        monto, 
+        categoria, 
+        descripcion,
+        estado: estado || "COMPLETADO", // ✅ ACTUALIZAMOS EL ESTADO
+        cliente: cliente || null
+      }
     });
     res.json(transaccionActualizada);
   } catch (error) {
@@ -462,7 +468,7 @@ app.put('/api/transacciones/:id',verificarToken, async (req, res) => {
 });
 
 // 5.2. Eliminar un movimiento de caja
-app.delete('/api/transacciones/:id',verificarToken, async (req, res) => {
+app.delete('/api/transacciones/:id', verificarToken, async (req, res) => {
   try {
     const { id } = req.params;
     await prisma.transaccion.delete({ where: { id: Number(id) } });
@@ -471,33 +477,108 @@ app.delete('/api/transacciones/:id',verificarToken, async (req, res) => {
     res.status(500).json({ error: 'Hubo un problema al eliminar el movimiento' });
   }
 });
+
 // 6. Obtener el historial de la Caja Diaria y el Saldo Actual
-app.get('/api/transacciones',verificarToken, async (req, res) => {
+app.get('/api/transacciones', verificarToken, async (req, res) => {
   try {
-    // Buscamos todas las transacciones, ordenadas de la más nueva a la más vieja
     const transacciones = await prisma.transaccion.findMany({
       orderBy: { fecha: 'desc' },
       include: {
-        cliente: { select: { nombre: true } }, // Traemos el nombre del cliente si existe
-        proveedor: { select: { nombre: true } } // Traemos el nombre del proveedor si existe
+        cliente: { select: { nombre: true } }, 
+        proveedor: { select: { nombre: true } } 
       }
     });
 
-    // Calculamos el saldo iterando sobre el historial
     let saldo_actual = 0;
-    transacciones.forEach((t: any) => {
-      if (t.tipo === 'Ingreso') saldo_actual += t.monto;
-      if (t.tipo === 'Egreso') saldo_actual -= t.monto;
+    
+    // ✅ FORMATEAMOS EL HISTORIAL Y CALCULAMOS EL SALDO CORRECTO
+    const historialFormateado = transacciones.map((t: any) => {
+      
+      // LÓGICA DEL SALDO: Solo sumamos/restamos si está COMPLETADO
+      if (t.estado !== 'PENDIENTE') {
+        if (t.tipo === 'Ingreso') saldo_actual += t.monto;
+        if (t.tipo === 'Egreso') saldo_actual -= t.monto;
+      }
+
+      // RED DE SEGURIDAD: Extraer el nombre del cliente sea objeto relacional o texto libre
+      let nombreCliente = t.cliente; 
+      if (typeof t.cliente === 'object' && t.cliente !== null) {
+        nombreCliente = t.cliente.nombre; 
+      }
+
+      return {
+        ...t,
+        cliente: nombreCliente
+      };
     });
 
-    // Devolvemos un objeto estructurado con el saldo ya procesado y la lista de movimientos
     res.json({
       saldo_actual,
-      historial: transacciones
+      historial: historialFormateado
     });
   } catch (error) {
     console.error("Error al obtener la caja:", error);
-    res.status(500).json({ error: 'Hubo un problema al consultar el historial de caja' });
+    res.status(500).json({ error: 'Hubo un problema al consultar el historial' });
+  }
+});
+
+// 7. NUEVO: Obtener el Resumen Semanal Agrupado
+app.get('/api/resumen-semanal', verificarToken, async (req, res) => {
+  try {
+    // Calculamos la fecha de hace 7 días exactos
+    const hace7Dias = new Date();
+    hace7Dias.setDate(hace7Dias.getDate() - 7);
+
+    const transaccionesSemana = await prisma.transaccion.findMany({
+      where: { fecha: { gte: hace7Dias } },
+      orderBy: { fecha: 'desc' }
+    });
+
+    const pendientesDeCobro: any[] = [];
+    const historialAgrupado: any = {};
+
+    transaccionesSemana.forEach((t: any) => {
+      const nombreCli = typeof t.cliente === 'object' && t.cliente !== null ? t.cliente.nombre : (t.cliente || 'Sin nombre');
+
+      // A) Separar los pendientes de cobro
+      if (t.estado === 'PENDIENTE') {
+        pendientesDeCobro.push({
+          id: t.id,
+          cliente: nombreCli,
+          monto: t.monto,
+          descripcion: t.descripcion || t.categoria,
+          fecha: t.fecha
+        });
+        return; // Importante: el return evita que el pendiente baje al agrupador de gastos
+      }
+
+      // B) Agrupar los movimientos completados por Día (Formato YYYY-MM-DD)
+      const fechaStr = new Date(t.fecha).toISOString().split('T')[0];
+
+      if (!historialAgrupado[fechaStr]) {
+        historialAgrupado[fechaStr] = {};
+      }
+
+      // C) Agrupar por Categoría dentro del Día
+      if (!historialAgrupado[fechaStr][t.categoria]) {
+        historialAgrupado[fechaStr][t.categoria] = [];
+      }
+
+      historialAgrupado[fechaStr][t.categoria].push({
+        id: t.id,
+        tipo: t.tipo,
+        monto: t.monto,
+        descripcion: t.descripcion
+      });
+    });
+
+    res.json({
+      pendientesDeCobro,
+      historialAgrupado
+    });
+  } catch (error) {
+    console.error("Error al obtener resumen semanal:", error);
+    res.status(500).json({ error: 'Hubo un problema al generar el resumen' });
   }
 });
 
