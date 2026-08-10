@@ -1,12 +1,13 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
-import { Home, Users, Wrench, FileText, DollarSign, LogOut, Menu, X } from 'lucide-react';
+import { Home, Users, Wrench, FileText, DollarSign, LogOut, Menu, X, CalendarDays } from 'lucide-react';
 import Clientes from './Clientes';
 import Materiales from './Materiales';
 import Presupuestos from './Presupuestos';
 import Caja from './Caja';
 import Login from './Login';
 import Inicio from './Inicio';
+import ResumenSemanal from './ResumenSemanal'; 
 
 // ==========================================
 // ESTRUCTURA PRINCIPAL (Menú Responsive + Pantallas)
@@ -14,7 +15,6 @@ import Inicio from './Inicio';
 function SistemaLayout({ onLogout, nombreUsuario }: { onLogout: () => void, nombreUsuario: string }) {
   const [menuAbierto, setMenuAbierto] = useState(false);
   
-  // Ahora useLocation es seguro porque este componente vive DENTRO del Router
   const location = useLocation();
   
   const menu = [
@@ -23,10 +23,11 @@ function SistemaLayout({ onLogout, nombreUsuario }: { onLogout: () => void, nomb
     { name: 'Materiales', path: '/materiales', icon: <Wrench size={20} /> },
     { name: 'Presupuestos', path: '/presupuestos', icon: <FileText size={20} /> },
     { name: 'Caja Diaria', path: '/caja', icon: <DollarSign size={20} /> },
+    // ✅ 2. Agregamos el Resumen Semanal al menú lateral
+    { name: 'Resumen Semanal', path: '/resumen', icon: <CalendarDays size={20} /> },
   ];
 
   return (
-    // En celular se apila (col), en PC se pone lado a lado (row)
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
       
       {/* 1. BARRA SUPERIOR (SOLO EN MÓVIL) */}
@@ -76,7 +77,7 @@ function SistemaLayout({ onLogout, nombreUsuario }: { onLogout: () => void, nomb
               <Link 
                 key={item.name} 
                 to={item.path} 
-                onClick={() => setMenuAbierto(false)} // Esconde el menú al hacer clic en móvil
+                onClick={() => setMenuAbierto(false)} 
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                   isActive 
                     ? 'bg-blue-600 text-white shadow-md' 
@@ -116,6 +117,8 @@ function SistemaLayout({ onLogout, nombreUsuario }: { onLogout: () => void, nomb
           <Route path="/materiales" element={<Materiales />} />
           <Route path="/presupuestos" element={<Presupuestos />} />
           <Route path="/caja" element={<Caja />} />
+          {/* ✅ 3. Agregamos la ruta del Resumen Semanal */}
+          <Route path="/resumen" element={<ResumenSemanal />} />
         </Routes>
       </main>
     </div>
@@ -129,7 +132,6 @@ export default function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [nombre, setNombre] = useState<string>(localStorage.getItem('nombre') || '');
 
-  // Función que se ejecuta cuando el Login es exitoso
   const iniciarSesion = (nuevoToken: string, nombreUsuario: string) => {
     localStorage.setItem('token', nuevoToken);
     localStorage.setItem('nombre', nombreUsuario);
@@ -137,7 +139,6 @@ export default function App() {
     setNombre(nombreUsuario);
   };
 
-  // Función para cerrar sesión
   const cerrarSesion = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('nombre');
@@ -145,12 +146,10 @@ export default function App() {
     setNombre('');
   };
 
-  // SI NO HAY TOKEN, SOLO MOSTRAMOS EL LOGIN
   if (!token) {
     return <Login onLogin={iniciarSesion} />;
   }
 
-  // SI HAY TOKEN, INICIAMOS EL ROUTER Y EL SISTEMA
   return (
     <Router>
       <SistemaLayout onLogout={cerrarSesion} nombreUsuario={nombre} />
