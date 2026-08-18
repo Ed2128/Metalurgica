@@ -75,10 +75,12 @@ app.post('/api/auth/login', async (req, res) => {
 });
 // --- RUTAS DE MATERIALES ---
 
-// 1. Obtener todos los materiales (Ya lo teníamos)
-app.get('/api/materiales',verificarToken, async (req, res) => {
+// 1. Obtener todos los materiales
+app.get('/api/materiales', verificarToken, async (req, res) => {
   try {
-    const materiales = await prisma.material.findMany();
+    const materiales = await prisma.material.findMany({
+      orderBy: { id: 'desc' } // Los más nuevos arriba
+    });
     res.json(materiales);
   } catch (error) {
     console.error("Error al obtener materiales:", error);
@@ -86,37 +88,31 @@ app.get('/api/materiales',verificarToken, async (req, res) => {
   }
 });
 
-// 2. Crear un nuevo material (Con impuestos dinámicos)
-app.post('/api/materiales',verificarToken, async (req, res) => {
+// 2. Crear un nuevo material (Recibe los impuestos calculados del frontend)
+app.post('/api/materiales', verificarToken, async (req, res) => {
   try {
-    // Extraemos los datos del body, permitiendo que ingresen los impuestos
-    // Asignamos valores por defecto solo por si el frontend decide no enviarlos
     const { 
       descripcion, 
       unidad_medida, 
+      cantidad, 
+      precio_unitario, 
       precio_base, 
-      tiene_iva_incluido,
-      porcentaje_iva = 0.21,     // 21%
-      porcentaje_iibb = 0.0331,  // 3.31%
-      porcentaje_muni = 0.008    // 0.80%
+      iva, 
+      percepcion_ib, 
+      seg_hig, 
+      precio_final 
     } = req.body;
 
-    // LÓGICA DE NEGOCIO: Impuestos dinámicos
-    let precio_final = precio_base;
-    
-    // Si el precio se ingresa "Sin IVA", sumamos los porcentajes recibidos
-    if (!tiene_iva_incluido) {
-      const recargoTotal = porcentaje_iva + porcentaje_iibb + porcentaje_muni;
-      precio_final = precio_base + (precio_base * recargoTotal);
-    }
-
-    // Insertamos el registro
     const nuevoMaterial = await prisma.material.create({
       data: {
         descripcion,
         unidad_medida,
+        cantidad,
+        precio_unitario,
         precio_base,
-        tiene_iva_incluido,
+        iva,
+        percepcion_ib,
+        seg_hig,
         precio_final
       }
     });
@@ -129,25 +125,32 @@ app.post('/api/materiales',verificarToken, async (req, res) => {
 });
 
 // 2.1. Actualizar (Editar) un material existente
-app.put('/api/materiales/:id',verificarToken, async (req, res) => {
+app.put('/api/materiales/:id', verificarToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { descripcion, unidad_medida, precio_base, tiene_iva_incluido } = req.body;
-
-    // Recalculamos el precio final por si el usuario cambió el precio base o el IVA
-    let precio_final = precio_base;
-    if (!tiene_iva_incluido) {
-      const porcentajeRecargo = 0.2511; // 21% + 3.31% + 0.80%
-      precio_final = precio_base + (precio_base * porcentajeRecargo);
-    }
+    const { 
+      descripcion, 
+      unidad_medida, 
+      cantidad, 
+      precio_unitario, 
+      precio_base, 
+      iva, 
+      percepcion_ib, 
+      seg_hig, 
+      precio_final 
+    } = req.body;
 
     const materialActualizado = await prisma.material.update({
       where: { id: Number(id) },
       data: {
         descripcion,
         unidad_medida,
+        cantidad,
+        precio_unitario,
         precio_base,
-        tiene_iva_incluido,
+        iva,
+        percepcion_ib,
+        seg_hig,
         precio_final
       }
     });
@@ -160,54 +163,42 @@ app.put('/api/materiales/:id',verificarToken, async (req, res) => {
 });
 
 // 2.2. Eliminar un material
-app.delete('/api/materiales/:id',verificarToken,   async (req, res) => {
+app.delete('/api/materiales/:id', verificarToken, async (req, res) => {
   try {
     const { id } = req.params;
-
-    await prisma.material.delete({
-      where: { id: Number(id) }
-    });
-
+    await prisma.material.delete({ where: { id: Number(id) } });
     res.json({ message: 'Material eliminado correctamente' });
   } catch (error) {
     console.error("Error al eliminar material:", error);
     res.status(500).json({ error: 'Hubo un problema al eliminar el material. Verifica que no esté siendo usado en un presupuesto.' });
   }
 });
+
 // 2.3. Carga masiva desde Excel (Bulk Insert)
-app.post('/api/materiales/bulk',verificarToken, async (req, res) => {
+app.post('/api/materiales/bulk', verificarToken, async (req, res) => {
   try {
-    const materialesExcel = req.body; // Recibimos el arreglo completo
+    const materialesExcel = req.body;
 
-    // Mapeamos los datos y aplicamos la misma matemática de impuestos
-    const dataParaInsertar = materialesExcel.map((m: any) => {
-      const precio_base = Number(m.precio_base) || 0;
-      
-      // Aceptamos booleanos o textos como "Si", "Sí", "True" desde el Excel
-      const tiene_iva = m.tiene_iva_incluido === true || String(m.tiene_iva_incluido).toLowerCase().includes('s');
-      
-      let precio_final = precio_base;
-      if (!tiene_iva) {
-        const porcentajeRecargo = 0.2511; // 21% + 3.31% + 0.80%
-        precio_final = precio_base + (precio_base * porcentajeRecargo);
-      }
+    // Como el frontend ahora procesa los impuestos del Excel, solo los mapeamos 
+    // y los forzamos a ser números por seguridad antes de guardarlos.
+    const dataParaInsertar = materialesExcel.map((m: any) => ({
+      descripcion: String(m.descripcion),
+      unidad_medida: String(m.unidad_medida || 'Kg'),
+      cantidad: Number(m.cantidad) || 1,
+      precio_unitario: Number(m.precio_unitario) || 0,
+      precio_base: Number(m.precio_base) || 0,
+      iva: Number(m.iva) || 0,
+      percepcion_ib: Number(m.percepcion_ib) || 0,
+      seg_hig: Number(m.seg_hig) || 0,
+      precio_final: Number(m.precio_final) || 0
+    }));
 
-      return {
-        descripcion: String(m.descripcion),
-        unidad_medida: String(m.unidad_medida || 'Unidad'),
-        precio_base,
-        tiene_iva_incluido: tiene_iva,
-        precio_final
-      };
-    });
-
-    // createMany es una función optimizada de Prisma para insertar miles de registros de golpe
     const insertados = await prisma.material.createMany({
       data: dataParaInsertar,
-      skipDuplicates: true // Evita que el proceso falle si hay algún error menor
+      skipDuplicates: true
     });
 
-    res.status(201).json({ message: `¡Éxito! Se importaron ${insertados.count} materiales al catálogo.` });
+    res.status(201).json({ message: `¡Éxito! Se importaron ${insertados.count} materiales al catálogo con sus impuestos desglosados.` });
   } catch (error) {
     console.error("Error en importación masiva:", error);
     res.status(500).json({ error: 'Hubo un problema al procesar el Excel' });
