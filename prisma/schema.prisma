@@ -12,12 +12,18 @@ datasource db {
 model Material {
   id                 Int      @id @default(autoincrement())
   descripcion        String
-  unidad_medida      String   // "Kilo", "Barra", "Unidad"
-  precio_base        Float    // El precio ingresado por el usuario
-  tiene_iva_incluido Boolean  @default(true)
-  precio_final       Float    // Calculado automáticamente si no tiene IVA
+  unidad_medida      String   
+  
+  // NUEVOS CAMPOS CONTABLES
+  cantidad           Float    @default(1)
+  precio_unitario    Float    @default(0)
+  precio_base        Float    // Importe (Cantidad x Precio Unitario)
+  iva                Float    @default(0) // 21%
+  percepcion_ib      Float    @default(0) // 3.31%
+  seg_hig            Float    @default(0) // 0.80% Posadas
+  precio_final       Float    // Importe + IVA + IB + Seg. e Hig.
+  
   fecha_actualizacion DateTime @updatedAt
-
   items_ordenes ItemOrdenTrabajo[]
 }
 
