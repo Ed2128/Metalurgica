@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Plus, Trash2, Save, Printer, Eye, X, History, Calculator, User, Wrench } from 'lucide-react';
+import { FileText, Plus, Trash2, Save, Printer, Eye, X, History, Calculator, User, Wrench, MessageCircle } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -165,6 +165,53 @@ export default function Presupuestos() {
     const costoMats = calcularCostoMateriales(orden);
     const coef = Number(orden.coeficiente_mano_obra) || 2.5; 
     return costoMats + (costoMats * coef);
+  };
+
+  const enviarWhatsApp = async (presupuesto: any) => {
+    const telefonoLimpio = String(presupuesto?.cliente?.contacto || '').replace(/\D/g, '');
+    const nombreCliente = presupuesto?.cliente?.nombre || 'Consumidor Final';
+    const numeroPresupuesto = `#${String(presupuesto.id).padStart(4, '0')}`;
+    const fecha = new Date(presupuesto.fecha).toLocaleDateString('es-AR');
+    const total = calcularCostoTotal(presupuesto).toLocaleString('es-AR');
+
+    const listadoItems = (presupuesto.items || []).map((item: any) => {
+      const descripcion = item.material?.descripcion || 'Insumo';
+      const cantidad = item.cantidad;
+      const unidad = item.material?.unidad_medida?.substring(0, 2) || 'Un';
+      return `• ${cantidad} ${unidad} — ${descripcion}`;
+    }).join('\n');
+
+    const mensaje = [
+      `Hola ${nombreCliente},`,
+      '',
+      `Le enviamos el presupuesto ${numeroPresupuesto} con fecha ${fecha}.`,
+      '',
+      'Detalle de materiales / ítems:',
+      listadoItems || '• Sin ítems cargados',
+      '',
+      `TOTAL GENERAL: $${total}`,
+      '',
+      'Este presupuesto tiene una validez de 7 días. Los precios pueden variar por el costo de los metales.',
+      '',
+      'Saludos,',
+      'Metalúrgica 41 40'
+    ].join('\n');
+
+    const textoCodificado = encodeURIComponent(mensaje);
+
+    if (!telefonoLimpio) {
+      await Swal.fire({
+        title: 'Sin teléfono registrado',
+        text: 'El cliente no tiene un teléfono válido. Se abrirá WhatsApp Web para que elija el contacto manualmente.',
+        icon: 'warning',
+        confirmButtonColor: '#16a34a',
+        confirmButtonText: 'Abrir WhatsApp'
+      });
+      window.open(`https://wa.me/?text=${textoCodificado}`, '_blank');
+      return;
+    }
+
+    window.open(`https://wa.me/${telefonoLimpio}?text=${textoCodificado}`, '_blank');
   };
 
   return (
@@ -362,6 +409,13 @@ export default function Presupuestos() {
               <div className="flex items-center gap-3">
                 <button onClick={() => window.print()} className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors flex items-center gap-2 shadow-sm">
                   <Printer size={16} /> Imprimir / Guardar PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => enviarWhatsApp(presupuestoSeleccionado)}
+                  className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors flex items-center gap-2 shadow-sm"
+                >
+                  <MessageCircle size={16} /> Enviar por WhatsApp
                 </button>
                 <button onClick={() => setPresupuestoSeleccionado(null)} className="text-gray-400 hover:text-gray-600 p-1 transition-colors">
                   <X size={24} />

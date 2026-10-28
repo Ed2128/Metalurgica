@@ -1,0 +1,13 @@
+# Reglas del Proyecto: Sistema de Gestión Metalúrgica
+
+## Stack Tecnológico
+- **Backend:** Node.js, Express, TypeScript (`src/index.ts`), Prisma ORM con PostgreSQL (Neon).
+- **Frontend:** React, TypeScript, Vite, Tailwind CSS.
+- **Librerías UI:** `lucide-react` para íconos, `sweetalert2` para alertas/modales, `xlsx` para importación de Excel.
+
+## Reglas Estrictas de Edición
+1. **PROHIBIDO romper el diseño responsivo:** Todas las tablas del frontend utilizan clases de Tailwind (`block md:table`, `flex md:table-cell`) para transformarse en tarjetas en dispositivos móviles. Al editar tablas, mantén SIEMPRE esa estructura intacta.
+2. **Formato de Moneda y Fechas:** Utiliza siempre `.toLocaleString('es-AR')` para montos de dinero y fechas en español de Argentina.
+3. **Autenticación:** Todas las peticiones `fetch` al backend deben incluir el header `Authorization: Bearer ${token}` limpiando comillas con `.replace(/^"|"$/g, '')`.
+4. **Impuestos de Misiones (Materiales):** Los materiales trabajan sobre precio neto (`precio_base` = cantidad * precio_unitario) y calculan: IVA (21%), Percepción IIBB Misiones (3.31%) y Tasa Seg. e Higiene Posadas (0.80%) para obtener el `precio_final`.
+5. **No eliminar código existente:** Realiza modificaciones quirúrgicas. Nunca reemplaces componentes enteros con comentarios tipo `// ... resto del código`.
